@@ -78,7 +78,7 @@ export class ControlCenter implements vscode.Disposable {
       comparison: this.comparison,
       traceNodes: traceTree(this.incident.observations.slice(0, 400)),
       traceCount: this.incident.observations.filter(o => o.spanId && o.traceId).length,
-      visualQa: this.context.extensionMode === vscode.ExtensionMode.Development && process.env.VESTIGIVO_SCREENSHOT_MODE === '1',
+      visualQa: this.context.extensionMode !== vscode.ExtensionMode.Production && process.env.VESTIGIVO_SCREENSHOT_MODE === '1',
       language: vscode.workspace.getConfiguration('vestigivo').get<string>('language', 'auto') === 'auto'
         ? (vscode.env.language.toLowerCase().startsWith('es') ? 'es' : 'en')
         : vscode.workspace.getConfiguration('vestigivo').get<string>('language', 'en')
@@ -131,7 +131,7 @@ export class ControlCenter implements vscode.Disposable {
   }
   /** Capture actual VS Code UI with a deterministic synthetic fixture. Never a production command. */
   async showVisualQaDemo(): Promise<void> {
-    if (this.context.extensionMode !== vscode.ExtensionMode.Development ||
+    if (this.context.extensionMode === vscode.ExtensionMode.Production ||
         process.env.VESTIGIVO_SCREENSHOT_MODE !== '1') throw new Error('Visual QA requires isolated Extension Development Host.');
     const fixture = await readFile(join(this.context.extensionPath, 'test', 'fixtures', 'visual-demo.jsonl'));
     const at = '2026-11-08T12:15:00.000Z';
@@ -157,7 +157,7 @@ export class ControlCenter implements vscode.Disposable {
     this.send();
   }
   async navigateVisualQa(section: string): Promise<void> {
-    if (this.context.extensionMode !== vscode.ExtensionMode.Development ||
+    if (this.context.extensionMode === vscode.ExtensionMode.Production ||
         process.env.VESTIGIVO_SCREENSHOT_MODE !== '1' ||
         !['overview','timeline','traces','cases'].includes(section))
       throw new Error('Invalid visual QA navigation.');
