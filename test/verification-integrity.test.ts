@@ -60,3 +60,11 @@ test('Failed, timed-out or flaky check outcomes cannot be elevated to CONFIRMED'
   for(const state of ['TIMEOUT','FLAKY','INCONCLUSIVE','CHECK_PASSED'] as const)
     assert.equal(evaluateVerification(h,{...input,currentOutcome:state}).state,'INCONCLUSIVE');
 });
+
+test('Unknown persisted top-level fields never reach reopened case or redacted exports', () => {
+  const saved = { ...createCase(), password: 'SHOULD_NOT_SURVIVE', leaked: { private_key: 'hidden' } };
+  const opened = loadCase(saved);
+  assert.equal(Object.hasOwn(opened, 'password'), false);
+  assert.equal(Object.hasOwn(opened, 'leaked'), false);
+  assert.equal(JSON.stringify(opened).includes('SHOULD_NOT_SURVIVE'), false);
+});
