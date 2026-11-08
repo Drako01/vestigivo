@@ -93,7 +93,8 @@
     "check": "npm run build && node --experimental-test-coverage --test-coverage-include=dist/src/core/*.js --test-coverage-lines=85 --test-coverage-branches=80 --test dist/test/*.test.js",
     "brand:verify": "node scripts/verify-brand.cjs",
     "test:coverage": "npm run check",
-    "test:host": "node dist/test/host/run.js"
+    "test:host": "node dist/test/host/run.js",
+    "benchmark": "node scripts/benchmark.cjs"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
