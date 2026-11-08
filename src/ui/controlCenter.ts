@@ -78,6 +78,7 @@ export class ControlCenter implements vscode.Disposable {
       comparison: this.comparison,
       traceNodes: traceTree(this.incident.observations.slice(0, 400)),
       traceCount: this.incident.observations.filter(o => o.spanId && o.traceId).length,
+      visualQa: this.context.extensionMode === vscode.ExtensionMode.Development && process.env.VESTIGIVO_SCREENSHOT_MODE === '1',
       language: vscode.workspace.getConfiguration('vestigivo').get<string>('language', 'auto') === 'auto'
         ? (vscode.env.language.toLowerCase().startsWith('es') ? 'es' : 'en')
         : vscode.workspace.getConfiguration('vestigivo').get<string>('language', 'en')
@@ -127,6 +128,40 @@ export class ControlCenter implements vscode.Disposable {
       audit: [...this.incident.audit, { at, action: 'verification-planned', detail: hypothesisId }].slice(-500) };
     this.status = 'COMPLETE';
     this.details = 'Manual verification plan recorded. No checks were run and no cause was confirmed.';
+  }
+  /** Capture actual VS Code UI with a deterministic synthetic fixture. Never a production command. */
+  async showVisualQaDemo(): Promise<void> {
+    if (this.context.extensionMode !== vscode.ExtensionMode.Development ||
+        process.env.VESTIGIVO_SCREENSHOT_MODE !== '1') throw new Error('Visual QA requires isolated Extension Development Host.');
+    const fixture = await readFile(join(this.context.extensionPath, 'test', 'fixtures', 'visual-demo.jsonl'));
+    const at = '2026-11-08T12:15:00.000Z';
+    const parsed = parseEvidence(fixture, 'visual-demo.jsonl', { importedAt: at });
+    let incident = importIntoCase(createCase('DEMO — Synthetic checkout incident', at), parsed, at);
+    const hypothesis = proposeHypothesis('Example hypothesis: payment latency may be associated with the failed checkout; a controlled check is still required.');
+    const planned = planVerification(hypothesis, {
+      assertion: 'Compare equivalent synthetic requests before and after an isolated, authorized payment-gateway configuration change.',
+      testId: 'demo-payment-check-01',
+      preconditions: 'Synthetic staging fixture with matching request input, isolated environment and a known baseline.',
+      expectedOutcome: 'Determine whether the same check produces an observed failure under the controlled change.',
+      risks: 'Observational association could be mistaken for causation; never change production systems.',
+      cost: 'Two controlled repetitions and investigator review.'
+    }, at);
+    incident = { ...incident, hypotheses: [planned],
+      notes: [{ id: 'demo-note', at, text: 'SYNTHETIC DEMO: No real customer data, gateway call or causal claim.' }] };
+    this.incident = incident;
+    this.comparison = null;
+    this.git = null;
+    this.status = 'COMPLETE';
+    this.details = 'SYNTHETIC DEMO — fabricated records for screenshots. No network activity.';
+    await this.open();
+    this.send();
+  }
+  async navigateVisualQa(section: string): Promise<void> {
+    if (this.context.extensionMode !== vscode.ExtensionMode.Development ||
+        process.env.VESTIGIVO_SCREENSHOT_MODE !== '1' ||
+        !['overview','timeline','traces','cases'].includes(section))
+      throw new Error('Invalid visual QA navigation.');
+    await this.panel?.webview.postMessage({ type: 'visualQaNavigate', section });
   }
   private async refreshProviderConnections(): Promise<void> {
     for (const name of ['sentry', 'grafana'] as const) {
