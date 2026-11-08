@@ -107,14 +107,23 @@ export function loadCase(input: unknown): IncidentCase {
     if (!a || !validText(a.at, 64) || !validText(a.action, 128) || !validText(a.detail, 2000))
       throw new Error('Invalid audit entry.');
   }
-  const normalized = {
-    ...record,
+  // Persisted JSON is untrusted. Never forward arbitrary top-level fields into reports/UI.
+  const normalized: IncidentCase = {
     schemaVersion: SCHEMA_VERSION,
-    archived: version === 0 ? (record.archived === true) : record.archived,
-    notes, bookmarks,
-    observations: observations.map(o => ({ ...(o as Record<string, unknown>), schemaVersion: SCHEMA_VERSION })),
-    correlations: []
-  } as unknown as IncidentCase;
+    id: record.id as string,
+    title: record.title as string,
+    createdAt: record.createdAt as string,
+    updatedAt: record.updatedAt as string,
+    archived: version === 0 ? (record.archived === true) : (record.archived as boolean),
+    sources: sources as IncidentCase['sources'],
+    observations: observations.map(o => ({ ...(o as Record<string, unknown>), schemaVersion: SCHEMA_VERSION })) as unknown as IncidentCase['observations'],
+    correlations: [],
+    hypotheses: hypotheses as IncidentCase['hypotheses'],
+    notes: notes as IncidentCase['notes'],
+    bookmarks: bookmarks as string[],
+    audit: audit as IncidentCase['audit'],
+    limitations: limitations as string[]
+  };
   const redacted = redactIncident(normalized);
   return { ...redacted, correlations: correlate(redacted.observations) };
 }
