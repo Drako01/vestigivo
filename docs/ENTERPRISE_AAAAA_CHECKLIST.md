@@ -181,3 +181,16 @@ La siguiente sesión debe comenzar por el último run del PR #3 y actualizar est
 **Nota de continuidad:** el bloque anterior que describe PAT de Open VSX es histórico y quedó **reemplazado por este checkpoint**.
 
 - [x] Corrección adicional del release guard: `main` todavía no contiene `package.json`. El primer merge con código puede publicar únicamente **0.1.1**, con 0.1.0 manual documentada en changelog y la misma verificación SHA/CI del PR. A partir de ahí exige incremento SemVer normal. Commit `f3316deab73f2401527c440f4f577aef3772ce87`.
+
+### Checkpoint — Trusted Publishing configurado y matriz OS real verde (2026-11-08)
+
+- [x] El propietario confirma que las políticas Trusted Publishing quedaron **registradas y solucionadas en Marketplace y Open VSX**. La configuración UI fue reportada por el propietario; **no se realizó todavía un publish OIDC de 0.1.1**, por lo que el canje de tokens end-to-end permanece no probado.
+- [x] GitHub confirma repositorio **público** `Drako01/vestigivo`, sin modificar `main` ni fusionar PR #3.
+- [x] CI real [#42506224026](https://github.com/Drako01/vestigivo/actions/runs/42506224026) para código `4feca58c7c7e4376bd5f4d6b012e1d74e33f07de`: **SUCCESS**, tres jobs `success` (Linux, Windows, macOS). En macOS, el paso **Genuine native VS Code Extension Host smoke (blocking)** terminó `success`; ENOENT corregido por `@vscode/test-electron 3.1.0`. En Windows también pasó Host real.
+- [x] 45 tests/0 fallos y cobertura core 96,66 % líneas/87,61 % ramas en el CI citado; VSIX 0.1.1 empaquetado y **smoke sobre bits instalados en perfil aislado Linux PASS**. Checksum Linux `f48ac6bd6930619ca6b786283a42086cc21307b6411fa2911a2dc33fb60b522b`.
+- [x] Workflows de release preparan el mismo VSIX para ambos registros con OIDC, `id-token: write` y environments `marketplace` / `open-vsx`; publicación solo con merge versionado validado. **Sin PAT**.
+- [ ] Verificar desde GitHub que los environments están restringidos a `main` y protegidos por revisores; validar OIDC real únicamente tras aprobar release.
+- [ ] Capturas auténticas de VS Code, importación/navegación UX, accesibilidad física, compatibilidad WSL/SSH/containers, caso RCA completo, seguridad exhaustiva y aceptación final del propietario.
+- [ ] El PR continúa en **Draft**; no realizar merge ni publicar 0.1.1 hasta completar DoD.
+
+**Regla de continuidad:** este checkpoint reemplaza el estado histórico "macOS ENOENT bloqueado". `0.1.1` sigue siendo una candidata, no un release.
