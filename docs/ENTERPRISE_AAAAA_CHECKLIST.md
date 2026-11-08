@@ -136,3 +136,22 @@ La siguiente sesión debe comenzar por el último run del PR #3 y actualizar est
 - **Linux VSIX**: SHA-256 `b12ff3ce3c7705b5323a4e607cb25d8c62adf8127fe63bc7c69bf07ad1be7a6e`.
 - **Limitación:** el test invoca `runTests` con `extensionDevelopmentPath` apuntando al directorio **instalado**, para ejecutar sus bytes. Confirma la instalación y el funcionamiento de esos archivos, **no** mide activación automática del paquete en un perfil de usuario sin `extensionDevelopmentPath`, ni clic físico/UX, ni macOS.
 - **Próximo paso:** investigar `macOS ENOENT`, ejecutar VSIX smoke nativo, accesibilidad/temas/capturas reales y flujos importación/cancelación.
+
+### Checkpoint — Preparación de publicación 0.1.1 / bloqueo OIDC (2026-11-08)
+
+**Esta sección prevalece sobre checkpoints históricos que mencionan únicamente 0.1.0.** El PR #3 sigue DRAFT, sin merge ni publicación de 0.1.1, `main` y la visibilidad privada se mantienen sin cambios.
+
+- [x] La captura del propietario muestra **0.1.0 activa en Open VSX**; confirmar por separado la disponibilidad 0.1.0 en Marketplace antes del lanzamiento.
+- [x] Versión candidata **0.1.1** en `package.json` y raíz de `package-lock.json`; `test/host/installed.ts` obtiene la versión desde el manifiesto (sin hardcode 0.1.0).
+- [x] Nuevo `.github/workflows/publish.yml` solo en `push` a `main`: autoriza incremento de versión, genera **un solo VSIX** y publica el mismo artefacto en Marketplace/Open VSX. **No reejecuta los tres tests del PR en el merge**.
+- [x] `scripts/release-guard.cjs` exige SHA del PR fusionado con tree idéntico y último CI verde (Linux/Windows/macOS); controla expresamente el step de Extension Host macOS que puede fallar aun con job verde.
+- [x] Marketplace utiliza `vsce publish --oidc` y Environment `marketplace`; no requiere ni utiliza PAT.
+- [x] Open VSX mantiene **PAT temporal** como secret de Environment `open-vsx`, porque su UI actualmente rechaza `Drako01/vestigivo` al no resolver repositorios privados. Proceso OIDC pendiente hasta que la instancia ofrezca registro con código (servidor 1.4.0+) y CLI compatible; **no convertir repo a público**.
+- [x] README principal profesional, con capacidades y limitaciones verificables y footer `Designed and developed by Alejandro Daniel Di Stefano — © 2026 ArmoTuSitio — MIT`, consistente con Orquestivo/Indizivo; agregado `docs/README_ES.md`, `CHANGELOG.md` y `docs/RELEASE_SETUP.md`.
+- [x] CI de PR incluye cambios a `publish.yml` dentro de los paths auditados.
+- [ ] **Screenshots reales** del VS Code instalado: todavía no disponibles desde este entorno; no usar ilustraciones o capturas sintéticas como evidencia. El README indica expresamente esta limitación.
+- [ ] Completar pruebas integrales y **resolver macOS Host ENOENT / exit -2**, bloqueante por diseño del release guard, además de e2e visual.
+- [ ] Configurar Environment `marketplace` y `open-vsx` con protección y `OVSX_PAT` (secret exclusivo de `open-vsx`) por el propietario.
+- [ ] Activar política OIDC Marketplace usando workflow `publish.yml`. La captura reportó estado `Inactive / Never` y ventana hasta **2026-11-10 14:05 hora local**; para repo privado, Marketplace exige canje inicial dentro de 48h. Si vence, renovar/recrear cuando se apruebe release.
+- [ ] Confirmar `npm ci`, `npm run check`, empaquetado 0.1.1, matrix y SHA exacto en CI **del HEAD nuevo**; capturar run de evidencia.
+- [ ] Aprobar merge y publicación únicamente después de DoD, policy/environments y QA del propietario. **Este checkpoint no autoriza merge ni release.**
