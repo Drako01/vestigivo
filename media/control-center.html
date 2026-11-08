@@ -303,7 +303,14 @@ if(action==='openSource'||action==='bookmark'){send(action,{observationId:button
 if(action.startsWith('provider')){send(action,{provider:button.dataset.provider});return}
 send(action)});
 $('navigation').addEventListener('keydown',event=>{if(!['ArrowRight','ArrowLeft','Home','End'].includes(event.key))return;event.preventDefault();let i=sections.indexOf(tab);if(event.key==='ArrowRight')i=(i+1)%sections.length;if(event.key==='ArrowLeft')i=(i-1+sections.length)%sections.length;if(event.key==='Home')i=0;if(event.key==='End')i=sections.length-1;tab=sections[i];render();$('navigation').querySelectorAll('button')[i].focus()});
-window.addEventListener('message',event=>{if(event.data&&event.data.type==='state'){model=event.data;render()}});
+window.addEventListener('message',event=>{
+  if(event.data&&event.data.type==='state'){model=event.data;render();return}
+  // Never accepts navigation when not running the development-only screenshot harness.
+  if(event.data&&event.data.type==='visualQaNavigate'&&model&&model.visualQa===true&&
+      ['overview','timeline','traces','cases'].includes(event.data.section)){
+    tab=event.data.section;render();
+  }
+});
 send('refresh');
 })();
 </script>
