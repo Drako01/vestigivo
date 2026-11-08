@@ -218,3 +218,19 @@ La siguiente sesión debe comenzar por el último run del PR #3 y actualizar est
 - [ ] Capturas físicas de Windows/macOS, accesibilidad visual/auditoría con screen reader, WSL/SSH/Dev Containers y otras tareas aún abiertas en fases 0–6 permanecen pendientes; **no convertir el éxito del gate visual en un cierre falso del roadmap**.
 
 **Resultado:** eliminado el bloqueo específico de README sin capturas; la decisión de merge y release continúa en manos del propietario. El PR #3 sigue abierto, no fusionado.
+
+### Checkpoint final de evidencia visual + CI para candidato 0.1.1 (2026-11-08)
+
+**Último SHA de código, assets y README probado:** `b38ecb782024a76f8102c4eb0a5a25c560a5c3df`. [CI #42508296978 — SUCCESS](https://github.com/Drako01/vestigivo/actions/runs/42508296978).
+
+- [x] Cuatro checks del workflow PASS en SHA exacto: `Verify (ubuntu-latest)`, `Verify (windows-latest)`, `Verify (macos-latest)` y `Capture authentic VS Code screenshots (synthetic fixture)`.
+- [x] Los tres checks exigidos por el ruleset `Protect main` coinciden exactamente y figuran `completed/success` (consultados por API).
+- [x] Tests 45 PASS, 0 FAIL. Cobertura core: **96,66 % líneas / 87,61 % ramas**.
+- [x] `SCREENSHOTS PASS` en CI: cuatro PNG originales **1440×900**, no idénticos, enlazados en el README, generados desde VS Code Electron con fixture sintético.
+- [x] `vestigivo-0.1.1.vsix` empaquetado: **31 archivos / 478,68 KB**, incluye las cuatro imágenes; smoke de instalación y Host sobre código empaquetado **PASS**.
+- [x] [README](../README.md), [guía española](README_ES.md) y [PR #3](https://github.com/Drako01/vestigivo/pull/3) actualizados con imágenes reales, contexto y atribución.
+- [x] PR #3 confirmado `draft=false`, `state=open`, `mergeable=true`; rama `main` no modificada. Los dos Trusted Publishers fueron configurados por el propietario.
+- [ ] Aprobación final de propietario/review requerida para `Squash and merge`. El primer canje real OIDC se verifica al ejecutar publicación `0.1.1` en `main`, no antes.
+- [ ] El roadmap AAAAA mantiene funciones avanzadas y matrices de QA pendientes, explícitamente descritas como limitaciones de la versión; **no declarar 100 % de fases 0–6 ni certificación de Enterprise AAAAA**.
+
+**Conclusión del gate solicitado por el propietario:** el bloqueo específico de las capturas para README se considera **RESUELTO**, con pruebas reproducibles y artefactos de VSIX. El release de 0.1.1 puede ser aprobado por el propietario como entrega incremental con las limitaciones documentadas, una vez que el último HEAD del checklist vuelva a tener CI verde.
