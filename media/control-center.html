@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src __CSP_SOURCE__; style-src 'nonce-__NONCE__'; script-src 'nonce-__NONCE__'; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Vestigivo RCA — Control Center</title>
+<style nonce="__NONCE__">
+:root{--surface:var(--vscode-editor-background);--ink:var(--vscode-editor-foreground);--muted:var(--vscode-descriptionForeground);--border:var(--vscode-panel-border,var(--vscode-widget-border,#3e4857));--accent:var(--vscode-focusBorder,#4dd6c8);--card:var(--vscode-sideBar-background,var(--vscode-editor-background));--ui:var(--vscode-font-family,system-ui)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface);color:var(--ink);font:14px/1.55 var(--ui)}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;color:var(--ink);background:var(--vscode-button-secondaryBackground,var(--card));border:1px solid var(--border);border-radius:8px;padding:9px 13px;transition:background .15s}
+button:hover{background:var(--vscode-button-secondaryHoverBackground,var(--border))}
+button:disabled{cursor:not-allowed;opacity:.55}
+button.primary{background:var(--vscode-button-background,#35678a);color:var(--vscode-button-foreground,#fff);border-color:transparent}
+button.primary:hover{background:var(--vscode-button-hoverBackground,#447fa5)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+input,select,textarea{color:var(--vscode-input-foreground,var(--ink));background:var(--vscode-input-background,var(--card));border:1px solid var(--vscode-input-border,var(--border));border-radius:8px;padding:10px 12px;min-width:0}
+textarea{resize:vertical;width:100%;min-height:82px}
+#shell{width:min(1380px,100%);margin:auto;padding:24px clamp(16px,3vw,40px) 50px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+.eyebrow{text-transform:uppercase;letter-spacing:.2em;font-size:10px;font-weight:700;color:var(--muted)}
+.brand{display:flex;gap:14px;align-items:center}
+.mark{display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:14px;border:1px solid var(--border);background:var(--card);font-size:25px;color:#48d7ce}
+.brand h1{margin:0;font-size:20px;font-weight:800;letter-spacing:.045em}
+.brand p{margin:0;font-size:10px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted)}
+.actions,.inline-actions,.filters{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+.description{max-width:800px;color:var(--muted);margin:12px 0 20px}
+#status{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:22px 0;padding:12px 16px;border-left:3px solid var(--accent);background:var(--card)}
+.status-name{font-weight:800;letter-spacing:.08em}
+.status-detail{overflow-wrap:anywhere;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 24px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:17px 18px}
+.stat strong{display:block;font-size:28px;font-variant-numeric:tabular-nums;line-height:1.25}
+.stat span{display:block;color:var(--muted);font-size:12px;margin-top:7px}
+nav{display:flex;gap:4px;align-items:center;overflow-x:auto;border-bottom:1px solid var(--border);margin:0 0 28px;padding-bottom:5px}
+nav button{flex-shrink:0;border:0;border-bottom:2px solid transparent;border-radius:6px 6px 0 0;background:transparent;color:var(--muted);padding:10px 15px}
+nav button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent);background:var(--card);font-weight:700}
+h2{font-size:22px;line-height:1.3;letter-spacing:-.02em;margin:0 0 8px}
+h3{font-size:15px;margin:0 0 9px}
+p{margin:6px 0 12px}
+.content-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:24px}
+.card{padding:20px;border:1px solid var(--border);border-radius:12px;background:var(--card);margin:12px 0}
+.card p:last-child{margin-bottom:0}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.mono,pre,code{font-family:var(--vscode-editor-font-family,ui-monospace,monospace);overflow-wrap:anywhere}
+pre{max-height:520px;overflow:auto;white-space:pre-wrap;word-break:break-word;border:1px solid var(--border);background:var(--surface);border-radius:8px;padding:16px;font-size:12px}
+.item{border-bottom:1px solid var(--border);padding:14px 0}
+.item:last-child{border:0}
+.item-head{display:flex;gap:14px;flex-wrap:wrap;justify-content:space-between;align-items:center}
+.tag{font-size:11px;text-transform:uppercase;font-weight:750;letter-spacing:.04em;padding:3px 7px;border-radius:5px;border:1px solid var(--border)}
+.tag-warn{border-color:#e6a75b}
+.tag-error{border-color:#f67880}
+.table{width:100%;border-collapse:collapse;text-align:left}
+.table th,.table td{padding:12px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+.table th{color:var(--muted);font-size:12px}
+.scroll{overflow-x:auto}
+.field{display:flex;flex-direction:column;gap:6px;flex:1 1 200px}
+.empty{padding:42px 24px;text-align:center;background:var(--card);border:1px dashed var(--border);border-radius:14px}
+.empty strong{font-size:16px;display:block;margin-bottom:6px}
+footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--border);color:var(--muted);font-size:12px}
+@media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.table th,.table td{padding:9px 5px}#shell{padding-top:18px}}
+@media(max-width:420px){.stats{grid-template-columns:1fr 1fr}.stat{padding:12px}.stat strong{font-size:22px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+@media(forced-colors:active){.tag,.card,.stat,button{border:1px solid CanvasText}nav button[aria-selected=true]{border-bottom:3px solid Highlight}}
+</style>
+</head>
+<body>
+<div id="shell">
+<header>
+<div class="brand"><div class="mark" aria-hidden="true">◎</div><div><div class="eyebrow">Incident Intelligence</div><h1>VESTIGIVO RCA</h1><p>Incident Intelligence / Root Cause Analysis</p></div></div>
+<div class="actions"><button data-action="new" type="button" data-label="new">New case</button><button data-action="open" type="button" data-label="open">Open saved</button><button data-action="import" type="button" class="primary" data-label="import">Import evidence</button></div>
+</header>
+<p class="description" id="subtitle">Every incident leaves evidence. Observations and correlations are not causal proof.</p>
+<div id="status" aria-live="polite" role="status"></div>
+<section class="stats" id="stats" aria-label="Case metrics"></section>
+<nav id="navigation" aria-label="Investigation sections" role="tablist"></nav>
+<main id="content" role="tabpanel" tabindex="-1" aria-live="off"></main>
+<footer id="footnote">Local-first · No implicit network calls · Redaction is best-effort · No automatic root-cause confirmation.</footer>
+</div>
+<script nonce="__NONCE__">
+(function() {
+'use strict';
+const vscode = acquireVsCodeApi();
+const $ = id => document.getElementById(id);
+const sections = ['overview','timeline','evidence','correlations','git','report','cases','settings'];
+const labels = {
+en:{new:'New case',open:'Open saved',import:'Import evidence',overview:'Overview',timeline:'Timeline',evidence:'Evidence',correlations:'Correlations',git:'Git context',report:'Report',cases:'Case studio',settings:'Settings',empty:'No evidence imported yet',emptyInfo:'Select a local JSON, JSONL or OTLP JSON file to begin. Nothing is scanned or uploaded automatically.',source:'Sources',events:'Observations',groups:'Correlation groups',hypotheses:'Hypotheses',unverified:'Unverified',readGit:'Read Git (opt-in)',save:'Save locally',duplicate:'Duplicate',archive:'Archive',delete:'Delete saved',exportMarkdown:'Export Markdown',exportJson:'Export JSON',addNote:'Add note',addHypothesis:'Add hypothesis',openSource:'Open source',search:'Search evidence',severity:'Severity',service:'Service',all:'All',note:'Research note',claim:'Falsifiable hypothesis',noGit:'Git is never inspected without an explicit click and workspace trust.',noCausality:'This section shows relationships, not a confirmed root cause.',missingTime:'Time unknown',settingsOpen:'Open extension settings',noResult:'No matching observations.',history:'Reopen, duplicate, annotate or archive a redacted case. Saving is opt-in and data is not encrypted by the extension.'},
+es:{new:'Nuevo caso',open:'Abrir guardado',import:'Importar evidencia',overview:'Resumen',timeline:'Cronología',evidence:'Evidencia',correlations:'Correlaciones',git:'Contexto Git',report:'Informe',cases:'Investigación',settings:'Configuración',empty:'Aún no hay evidencia importada',emptyInfo:'Seleccioná un archivo JSON, JSONL u OTLP JSON local. No se escanea ni envía nada automáticamente.',source:'Fuentes',events:'Observaciones',groups:'Grupos correlacionados',hypotheses:'Hipótesis',unverified:'Sin verificar',readGit:'Leer Git (opt-in)',save:'Guardar localmente',duplicate:'Duplicar',archive:'Archivar',delete:'Eliminar guardado',exportMarkdown:'Exportar Markdown',exportJson:'Exportar JSON',addNote:'Agregar nota',addHypothesis:'Agregar hipótesis',openSource:'Abrir origen',search:'Buscar evidencia',severity:'Severidad',service:'Servicio',all:'Todos',note:'Nota de investigación',claim:'Hipótesis falsable',noGit:'Git nunca se inspecciona sin un clic explícito y un workspace confiable.',noCausality:'Esta sección muestra relaciones, no una causa raíz confirmada.',missingTime:'Hora desconocida',settingsOpen:'Abrir configuración',noResult:'No hay observaciones coincidentes.',history:'Reabrir, duplicar, anotar o archivar un caso redactado. Guardar es opt-in y la extensión no cifra los datos.'}
+};
+let model = null, tab='overview', filter={text:'',severity:'ALL',service:'ALL'}, noteText='',claimText='';
+const t = key => (labels[(model && model.language==='es')?'es':'en'][key] || key);
+const send = (type, more={}) => vscode.postMessage(Object.assign({type},more));
+function el(tag, className, text) { const e=document.createElement(tag); if(className)e.className=className;if(text!==undefined)e.textContent=String(text);return e; }
+function append(parent,...children){for(const c of children)if(c)parent.append(c);return parent}
+function button(text,action,primary=false,more={}) {const b=el('button',primary?'primary':'',text);b.type='button';b.dataset.action=action;for(const [key,value] of Object.entries(more))b.dataset[key]=value;b.disabled=!!(model&&model.busy);return b;}
+function paragraph(text,cls='muted'){return el('p',cls,text)}
+function card(title,detail){const c=el('section','card');append(c,el('h3','',title),paragraph(detail));return c}
+function head(title,description,actions=[]){const h=el('div','content-head'),intro=el('div');append(intro,el('h2','',title),paragraph(description));append(h,intro,...actions);return h}
+function empty(message,description){return append(el('div','empty'),el('strong','',message),paragraph(description))}
+function kpi(n,label){return append(el('div','stat'),el('strong','',n),el('span','',label))}
+function ts(o){return o.timestamp||t('missingTime')}
+function valid(){return !!(model&&model.case)}
+function records(){if(!valid())return [];const list=model.case.observations||[];return list.filter(o=>(!filter.text||JSON.stringify([o.message,o.service,o.traceId,o.requestId]).toLowerCase().includes(filter.text.toLowerCase()))&&(filter.severity==='ALL'||o.severity===filter.severity)&&(filter.service==='ALL'||o.service===filter.service)).slice(0,10000).sort((a,b)=>(a.timestamp===null?1:b.timestamp===null?-1:(a.timestamp||'').localeCompare(b.timestamp||''))||a.provenance.ordinal-b.provenance.ordinal);}
+function filters(container){const bar=el('div','filters');const search=append(el('label','field'),el('span','small',t('search')));const input=el('input');input.type='search';input.value=filter.text;input.placeholder=t('search');input.addEventListener('input',()=>{filter.text=input.value;renderContent()});append(search,input);bar.append(search);
+for(const [field,key,values] of [['severity','severity',['ALL','TRACE','DEBUG','INFO','WARN','ERROR','FATAL','UNKNOWN']],['service','service',['ALL',...new Set((model.case.observations||[]).map(o=>o.service).filter(Boolean))]]]){const label=append(el('label','field'),el('span','small',t(key)));const select=el('select');for(const value of values){const option=el('option','',value==='ALL'?t('all'):value);option.value=value;select.append(option)}select.value=filter[field];select.addEventListener('change',()=>{filter[field]=select.value;renderContent()});append(label,select);bar.append(label)}
+container.append(bar)}
+function observationRow(o){const item=el('article','item');const top=el('div','item-head');const left=el('div');append(left,el('span','tag '+(o.severity==='ERROR'||o.severity==='FATAL'?'tag-error':''),o.severity),el('span','small mono','  '+ts(o)));append(top,left,button(t('openSource'),'openSource',false,{observationId:o.id}));append(item,top,el('p','',o.message),paragraph((o.service||'Unknown service')+' · source '+o.provenance.sourceId+' #'+o.provenance.ordinal,'small muted'));return item;}
+function overview(root){append(root,head(t('overview'),'Evidence-backed incident workspace. No automatic RCA conclusions.'));if(!model.case.observations.length){root.append(empty(t('empty'),t('emptyInfo')));root.append(button(t('import'),'import',true));return}
+const grid=el('div','grid');
+append(grid,card('Current case',model.case.title+' · '+model.case.id),card('Observed signals',model.case.observations.length+' imported records across '+model.case.sources.length+' selected source(s).'));
+root.append(grid);const recent=el('section','card');append(recent,el('h3','','Latest observations'));for(const o of records().slice(-5))recent.append(observationRow(o));root.append(recent);
+}
+function timeline(root){append(root,head(t('timeline'),'Sorted by available source timestamps; missing/ambiguous clocks are not fabricated.'));filters(root);const list=records();const area=el('div','card');if(!list.length)area.append(empty(t('noResult'),''));for(const o of list.slice(0,400))area.append(observationRow(o));if(list.length>400)area.append(paragraph('Showing 400 of '+list.length+' filtered observations.','small'));root.append(area)}
+function evidence(root){append(root,head(t('evidence'),'Source fingerprints and original record provenance. Open source works only if the original file remains available in this session.'));if(!model.case.sources.length){root.append(empty(t('empty'),t('emptyInfo')));return}for(const s of model.case.sources){const area=el('div','card');append(area,el('h3','',s.name),paragraph('SHA-256 '+s.sha256,'mono small'),paragraph(s.format+' · '+s.byteLength+' bytes · '+s.importedAt,'small'));root.append(area)}for(const o of records().slice(0,100)){const a=observationRow(o);a.append(el('pre','',JSON.stringify(o.attributes,null,2)));root.append(a)}}
+function correlations(root){append(root,head(t('correlations'),t('noCausality')));if(!model.case.correlations.length){root.append(empty('No exact identifier groups','Events must share an exact trace or request ID; timestamp proximity is insufficient.'));return}
+for(const c of model.case.correlations){const a=el('section','card');append(a,el('span','tag',c.state),el('h3','',c.method+': '+c.key),paragraph(c.explanation),paragraph(c.observationIds.length+' observed records · '+c.observationIds.join(', '),'mono small'));root.append(a)}}
+function git(root){append(root,head(t('git'),t('noGit'),[button(t('readGit'),'git',true)]));if(!model.git){root.append(empty('No Git context loaded','You must approve a read-only lookup in a trusted workspace.'));return}root.append(card('Repository',model.git.repository));for(const entry of model.git.entries){root.append(card(entry.subject,entry.sha+' · '+entry.date))}root.append(paragraph(model.git.note))}
+function report(root){append(root,head(t('report'),'Preview before exporting. JSON and Markdown exports are redacted and versioned.',[button(t('exportMarkdown'),'exportMarkdown',true),button(t('exportJson'),'exportJson')]));root.append(el('pre','',model.reportPreview||'No report available.'))}
+function cases(root){append(root,head(t('cases'),t('history'),[button(t('save'),'save',true),button(t('open'),'open'),button(t('duplicate'),'duplicate'),button(t('archive'),'archive'),button(t('delete'),'delete')]));root.append(card('Incident case',model.case.title+' · '+model.case.id+(model.case.archived?' · Archived':'')));
+const grid=el('div','grid');const n=el('div','card');append(n,el('h3','',t('note')));const area=el('textarea');area.value=noteText;area.maxLength=2000;area.addEventListener('input',()=>noteText=area.value);append(n,area,button(t('addNote'),'note'));grid.append(n);
+const h=el('div','card');append(h,el('h3','',t('claim')));const claim=el('textarea');claim.value=claimText;claim.maxLength=1000;claim.addEventListener('input',()=>claimText=claim.value);append(h,claim,button(t('addHypothesis'),'hypothesis'));grid.append(h);root.append(grid);
+for(const hypothesis of model.case.hypotheses)root.append(card(hypothesis.state,hypothesis.statement));
+for(const note of model.case.notes)root.append(card(note.at,note.text));
+}
+function settings(root){append(root,head(t('settings'),'Privacy and import safety boundaries.',[button(t('settingsOpen'),'settings',true)]));root.append(card('Default privacy','Local first, no automatic upload, no background scans. Persistence is opt-in and stored cases are not encrypted by Vestigivo.'));root.append(card('RCA evidence contract','OBSERVED and CORRELATED do not imply a cause. Only controlled comparable reproduction can support a narrowly scoped CONFIRMED statement.'));root.append(card('Import budgets','Per-source 8 MiB / 10,000 observations by default. Configure in VS Code Settings.'))}
+function renderContent(){const root=$('content');root.replaceChildren();if(!valid())return;({overview,timeline,evidence,correlations,git,report,cases,settings}[tab]||overview)(root);}
+function render(){if(!valid())return;document.documentElement.lang=model.language==='es'?'es':'en';for(const b of document.querySelectorAll('[data-label]'))b.textContent=t(b.dataset.label);$('subtitle').textContent=model.language==='es'?'Cada incidente deja evidencia. Observar y correlacionar no demuestra causalidad.':'Every incident leaves evidence. Observation and correlation do not prove causality.';
+const s=$('status');s.replaceChildren(el('span','status-name',model.status),el('span','status-detail',model.details||'Ephemeral session; no automatic persistence.'));const stats=$('stats');stats.replaceChildren(kpi(model.case.sources.length,t('source')),kpi(model.case.observations.length,t('events')),kpi(model.case.correlations.length,t('groups')),kpi(model.case.hypotheses.filter(h=>h.state!=='CONFIRMED').length,t('unverified')));
+const nav=$('navigation');nav.replaceChildren();for(const id of sections){const b=el('button','',t(id));b.type='button';b.setAttribute('role','tab');b.setAttribute('aria-selected',String(tab===id));b.tabIndex=tab===id?0:-1;b.dataset.tab=id;nav.append(b)}renderContent()}
+document.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.dataset.tab){tab=button.dataset.tab;render();return}const action=button.dataset.action;if(!action)return;
+if(action==='note'){if(noteText.trim())send('note',{text:noteText});noteText='';return}
+if(action==='hypothesis'){if(claimText.trim().length>=10)send('hypothesis',{text:claimText});claimText='';return}
+if(action==='openSource'){send(action,{observationId:button.dataset.observationId});return}
+send(action)});
+$('navigation').addEventListener('keydown',event=>{if(!['ArrowRight','ArrowLeft','Home','End'].includes(event.key))return;event.preventDefault();let i=sections.indexOf(tab);if(event.key==='ArrowRight')i=(i+1)%sections.length;if(event.key==='ArrowLeft')i=(i-1+sections.length)%sections.length;if(event.key==='Home')i=0;if(event.key==='End')i=sections.length-1;tab=sections[i];render();$('navigation').querySelectorAll('button')[i].focus()});
+window.addEventListener('message',event=>{if(event.data&&event.data.type==='state'){model=event.data;render()}});
+send('refresh');
+})();
+</script>
+</body>
+</html>
