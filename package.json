@@ -92,6 +92,7 @@
     "package:vsix": "npm run build && vsce package --no-dependencies",
     "check": "npm run build && node --experimental-test-coverage --test-coverage-include=dist/src/core/*.js --test-coverage-lines=85 --test-coverage-branches=80 --test dist/test/*.test.js",
     "brand:verify": "node scripts/verify-brand.cjs",
+    "screenshots:verify": "node scripts/verify-readme-screenshots.cjs",
     "test:coverage": "npm run check",
     "test:host": "node dist/test/host/run.js",
     "test:vsix-host": "node dist/test/host/installed.js",
