@@ -4,12 +4,12 @@ Corte: **2026-11-08**. Draft PR #3: https://github.com/Drako01/vestigivo/pull/3 
 
 ## SHA y trazabilidad
 
-- HEAD de **código y tests** validado: `e08deb1f17d33e470fa78fb22931bce2feb7929e`.
-- CI integral **SUCCESS** [#42500482525](https://github.com/Drako01/vestigivo/actions/runs/42500482525). Los commits de **solo documentación** posteriores no cambian ese binario.
+- HEAD de **código y tests** validado: `c534098b3d40b42d25374e2810e0e8562c07004b`.
+- CI integral **SUCCESS** [#42501342938](https://github.com/Drako01/vestigivo/actions/runs/42501342938), Linux + Windows/macOS. La prueba Host macOS falló y quedó expresamente como WARN en un paso no bloqueante. Los commits de **solo documentación** posteriores no cambian ese binario.
 - Tests `45 PASS / 0 FAIL`; cobertura core `96,66 % líneas / 87,61 % branches`, meta >=85/80.
 - Pasos PASS: `npm ci` (sin scripts), compilación TypeScript strict, tests+coverage, selección de scope **por diff completo del PR**, Extension Development Host Linux, benchmark 1K/10K/100K, producción `npm audit --omit=dev --audit-level=high`, branding PNG/SVG, empaquetado VSIX y artefactos privados.
 - Extension Host real Linux [#42500482525](https://github.com/Drako01/vestigivo/actions/runs/42500482525): activación, comandos registrados, pestaña central, roundtrip storage y delete, apertura del contenedor Activity Bar **mediante comando**. NO equivale a clic físico ni a instalación del VSIX.
-- VSIX `vestigivo-0.1.0.vsix`: **26 archivos, ~54,36 KB**, SHA-256 `ba580db5de370ffd647fff938875f3fc54e900b4ddd27dfbd107edd01bc053a9`. Artefacto en el run privado.
+- VSIX Linux `vestigivo-0.1.0.vsix`: **26 archivos, ~54,36 KB**, SHA-256 `b12ff3ce3c7705b5323a4e607cb25d8c62adf8127fe63bc7c69bf07ad1be7a6e`. Artefacto en el run privado.
 
 ## Rendimiento real — benchmark sintético del core
 
@@ -41,9 +41,11 @@ Run: [#42500482525](https://github.com/Drako01/vestigivo/actions/runs/4250048252
 | Prueba | Estado | Razón / gate necesario |
 |---|---|---|
 | Click físico Activity Bar (una acción), tabs, picker, cancelación y navegación | BLOCKED | E2E GUI real sobre revisión final, no solo ejecución del comando |
-| Instalar VSIX resultante en host limpio y reiniciar VS Code | BLOCKED | Extension Development Host no equivale a extensión instalada |
+| VSIX instalado + Host Linux | PASS (alcance acotado) | CLI instaló en perfil aislado; test usó `extensionDevelopmentPath` sobre los **archivos instalados**, no los fuentes. No prueba activación natural sin devPath, reinicio completo, ni clic físico. |
+| VSIX instalado en Windows/macOS y reinicio de perfil real | BLOCKED | Solo se probó empaquetado nativo, no VSIX instalado nativo. |
 | Dark/light/high contrast, screen reader, foco, teclado completo, zoom, ES/EN | BLOCKED | QA visual/manual y capturas auténticas |
-| Windows/macOS/WSL/SSH/Dev Containers | BLOCKED | Entornos no ejecutados en este corte |
+| Windows/macOS | PARTIAL | 45 tests y VSIX nativos PASS en ambos; Windows Host PASS; macOS Host falla ENOENT / exit -2 con step `continue-on-error`. |
+| WSL/SSH/Dev Containers | BLOCKED | Entornos no ejecutados en este corte. |
 | Sentry/Grafana live con scope y paginación reales | BLOCKED | Tokens/cuentas autorizadas no disponibles |
 | Egress monitor, falsos negativos PII, fuzz y mutation, licencia/SBOM | PARTIAL | Falta instrumentación/evidencia independiente |
 | SHA equivalente al integrado, legal clearance y publicación | OWNER BLOCKED | PR Draft sin aprobación; no se hizo merge |
@@ -63,4 +65,7 @@ sha256sum vestigivo-0.1.0.vsix
 
 Para E2E de desarrollo Linux se requiere escritorio o `xvfb-run -a npm run test:host`. Para Windows/macOS se necesitan sus runners y un VS Code real. Cada gate debe adjuntar SHA, sistema, logs y evidencia; **SKIP/BLOCKED nunca equivalen a PASS**.
 
-**Conclusión:** el código validado pasa gates automatizados del núcleo/Host Linux, benchmarks y artefacto privado. Las siete fases siguen **PARTIAL** por DoD no acreditado. **NOT READY FOR MERGE / PUBLISH**.
+**Conclusión:** el código validado pasa gates automatizados del núcleo/Host Linux, benchmarks y VSIX **instalado y probado con sus archivos en Linux**; Windows/macOS tienen pruebas de core/package, con Host macOS todavía fallido. Las siete fases siguen **PARTIAL** por DoD no acreditado. **NOT READY FOR MERGE / PUBLISH**.
+
+
+Checkpoint empaquetado [CI #42501342938](https://github.com/Drako01/vestigivo/actions/runs/42501342938): `PACKAGED VSIX INSTALL PASS` y `PACKAGED VSIX HOST PASS` en Linux. El test ejecuta el directorio instalado vía devPath; **no equivale a prueba de UI física ni activación automática**. Mac Host registra `ENOENT` pese a job verde. Documento sincronizado con el [checklist](ENTERPRISE_AAAAA_CHECKLIST.md).
