@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import type { EnvironmentFingerprint, Hypothesis, VerificationResult } from './types';
+import type { EnvironmentFingerprint, Hypothesis, VerificationResult, VerificationPlan } from './types';
+import { redactText } from './redact';
 export function proposeHypothesis(statement: string, supports: string[] = [], contradicts: string[] = []): Hypothesis {
   const clean = statement.trim();
   if (clean.length < 10 || clean.length > 1000) throw new Error('Hypothesis must be 10–1000 characters.');
@@ -32,6 +33,15 @@ export function validStoredHypothesis(input: unknown): boolean {
       !h.supports.every(x => txt(x, 256)) ||
       !Array.isArray(h.contradicts) || h.contradicts.length > 200 ||
       !h.contradicts.every(x => txt(x, 256))) return false;
+  if (h.plan !== undefined && h.plan !== null) {
+    if (typeof h.plan !== 'object' || Array.isArray(h.plan)) return false;
+    const p = h.plan as Record<string, unknown>;
+    if (!txt(p.id, 64) || p.hypothesisId !== h.id || p.status !== 'PLANNED' ||
+        !txt(p.assertion, 1000) || (p.assertion as string).length < 10 ||
+        !txt(p.testId, 80) || !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$/.test(p.testId as string) ||
+        !txt(p.preconditions, 1000) || !txt(p.expectedOutcome, 1000) ||
+        !txt(p.risks, 500) || !txt(p.cost, 300) || !txt(p.createdAt, 64)) return false;
+  }
   if (h.verification === null) return h.state === 'HYPOTHESIS';
   if (!h.verification || typeof h.verification !== 'object' || Array.isArray(h.verification)) return false;
   const v = h.verification as Record<string, unknown>;
@@ -68,6 +78,22 @@ export function validStoredHypothesis(input: unknown): boolean {
   return true;
 }
 
+export type PlanInput = Pick<VerificationPlan, 'assertion' | 'testId' | 'preconditions' | 'expectedOutcome' | 'risks' | 'cost'>;
+/** Planning is declarative and never runs a check or confirms a hypothesis. */
+export function planVerification(hypothesis: Hypothesis, input: PlanInput, now = new Date().toISOString()): Hypothesis {
+  const cleaned = Object.fromEntries(Object.entries(input).map(([key, value]) =>
+    [key, typeof value === 'string' ? redactText(value.trim()) : ''])) as PlanInput;
+  if (cleaned.assertion.length < 10 || cleaned.assertion.length > 1000 ||
+      !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$/.test(cleaned.testId) ||
+      cleaned.preconditions.length < 5 || cleaned.preconditions.length > 1000 ||
+      cleaned.expectedOutcome.length < 5 || cleaned.expectedOutcome.length > 1000 ||
+      cleaned.risks.length < 3 || cleaned.risks.length > 500 ||
+      cleaned.cost.length < 2 || cleaned.cost.length > 300)
+    throw new Error('Verification plan requires a specific assertion, test ID, prerequisites, expected outcome, risks and cost.');
+  const plan: VerificationPlan = { id: randomUUID(), hypothesisId: hypothesis.id,
+    ...cleaned, createdAt: now, status: 'PLANNED' };
+  return { ...hypothesis, state: 'HYPOTHESIS', verification: null, plan };
+}
 export interface VerificationInput {
   assertion: string;
   testId: string;
