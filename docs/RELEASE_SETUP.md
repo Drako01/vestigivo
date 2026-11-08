@@ -1,65 +1,57 @@
-# Vestigivo RCA — Configuración de publicación 0.1.1
+# Vestigivo RCA — Publicación automatizada desde GitHub Actions
 
-**Estado:** preparación de CI/CD sobre [Draft PR #3](https://github.com/Drako01/vestigivo/pull/3). El propietario decidió cambiar la visibilidad del repositorio a **público**; todavía debe verificarse el cambio efectivo. No ejecutar merge ni publicar antes de completar las verificaciones.
+**Iteración:** `v0.1.2` · [Repositorio](https://github.com/Drako01/vestigivo) · [Releases](https://github.com/Drako01/vestigivo/releases)
 
-## Cadena de versión
+## Estado verificado
 
-1. **0.1.0**: primera versión publicada manualmente por el propietario. La captura del 8-11-2026 muestra versión activa en Open VSX; para Marketplace, verificar su ficha por separado.
-2. **0.1.1**: código y manifiesto preparados en PR #3, jamás publicados mientras el PR esté en Draft.
-3. Un merge a `main` con **incremento de versión** activa únicamente `.github/workflows/publish.yml`. `release-guard.cjs` exige: PR squash asociado, equivalencia exacta del árbol de Git, última verificación verde del SHA del PR y los tres jobs reales, incluido el smoke de macOS (no basta un job verde con `continue-on-error`).
-4. En el merge **no se vuelven a correr los tests del PR**. Se compila el VSIX que se enviará a ambos registros y se comprueba su SHA-256. Si no cambia la versión, la publicación se omite.
+- `0.1.0`: publicación inicial manual.
+- `0.1.1`: publicada correctamente por Trusted Publishing (OIDC) en **Visual Studio Marketplace y Open VSX**, tras el merge del [PR #3](https://github.com/Drako01/vestigivo/pull/3). [Run real #42508738437](https://github.com/Drako01/vestigivo/actions/runs/42508738437): `authorize`, `package`, `marketplace`, `open-vsx` todos **SUCCESS**.
+- `0.1.1` no tuvo GitHub Release: [la lista de Releases](https://github.com/Drako01/vestigivo/releases) estaba vacía antes de esta iteración. **No reconstruir ni republicar 0.1.1**.
+- `0.1.2`: versión incrementada en `package.json`, `package-lock.json` y `CHANGELOG.md`. Pendiente de PR, aprobación y merge; agregar GitHub Release es el objetivo de esta iteración.
 
-## Visual Studio Marketplace — OIDC
+## Política para v0.1.2 y posteriores
 
-- Configurar en el publisher `armotusitio` una política Trusted Publishing:
-  - Provider `GitHub Actions`
-  - Owner `Drako01`, repository `vestigivo`
-  - Workflow `publish.yml`
-  - Environment `marketplace`
-- En GitHub, crear Environment `marketplace`, limitar deployments a `main` y exigir aprobación del propietario cuando corresponda.
-- El job `marketplace` tiene `id-token: write` y ejecuta `vsce publish --oidc --packagePath ...`. **Nunca** se requiere `VSCE_PAT`.
-- Para repositorios privados, Marketplace exige realizar el primer canje de token dentro de 48 horas de crear la política; luego queda permanentemente activa. Si caduca, reactivar/recrear la política cuando el release esté realmente listo. La captura del propietario indica vencimiento **10-11-2026 14:05 hora local**.
-- En PR y en `main` nunca instalar un workflow que publique solo por cerrar un PR sin gate de versión y evidencia.
+La validación sucede únicamente en el **PR** mediante `.github/workflows/ci.yml`. La protección de `main` exige `Verify (ubuntu-latest)`, `Verify (windows-latest)`, `Verify (macos-latest)`, aprobación y **Squash and merge**.
 
-## Open VSX — Trusted Publishing OIDC (repositorio público)
+Después de un merge autorizado, `.github/workflows/publish.yml` ejecuta:
 
-El propietario decidió hacer público `Drako01/vestigivo`. **El cambio de visibilidad debe confirmarse en GitHub antes de registrar la política; a la fecha de este corte, la última consulta todavía devolvió `private`.**
+1. **authorize**: compara el incremento SemVer; comprueba que el árbol fusionado coincida exactamente con el PR aprobado y que los tres jobs de CI del SHA de origen pasaran. Si no cambió la versión, omite la publicación.
+2. **package**: compila una vez y genera `vestigivo-<version>.vsix`, `SHA256SUMS`. Ambos se almacenan en un único artifact de Actions.
+3. **marketplace**: descarga ese artifact, valida `sha256sum --check SHA256SUMS` y publica con `vsce --oidc`.
+4. **open-vsx**: descarga el mismo artifact, valida su SHA y publica con `ovsx --trusted-publishing`.
+5. **github-release**: **solo si los dos registros anteriores finalizaron con éxito**. Descarga el mismo artifact, verifica integridad, confirma que `main` aún apunta al SHA fusionado, crea o valida la etiqueta protegida `v<version>`, publica un GitHub Release con notas automáticas y adjunta el VSIX más `SHA256SUMS`. Descarga lo publicado y verifica que sus bytes son idénticos.
 
-La captura del propietario confirma que `0.1.0` ya aparece como versión activa en Open VSX. Cuando GitHub responda **public**, registrar en Open VSX → Trusted Publishers:
+No se ejecuta nuevamente el harness completo al fusionar y no se reconstruye el VSIX para GitHub Releases.
 
-| Campo | Valor |
-| --- | --- |
-| Namespace | `armotusitio` |
-| Extension | `vestigivo` |
-| Provider | GitHub Actions |
-| Owner | `Drako01` |
-| Repository | `vestigivo` |
-| Workflow | `publish.yml` |
-| Environment | `open-vsx` |
+## Entornos y permisos
 
-GitHub → Settings → Environments → `open-vsx`: permitir deployments solo desde `main` y solicitar aprobación del propietario. Esta protección es importante porque el registro de Open VSX por sí solo no restringe ramas.
+| Job | Environment | Permisos adicionales |
+| --- | --- | --- |
+| `marketplace` | `marketplace` | `id-token: write` |
+| `open-vsx` | `open-vsx` | `id-token: write` |
+| `github-release` | `github-release` | `contents: write` |
 
-El job `open-vsx` usa `id-token: write`, `ovsx publish --trusted-publishing` y verifica el SHA-256 del mismo VSIX enviado a Marketplace. **No utiliza `OVSX_PAT`**; el script lo elimina del entorno. Una vez confirmado OIDC, eliminar el secret antiguo en GitHub para evitar credenciales persistentes.
+Los dos Trusted Publishers OIDC ya están configurados. Para GitHub Releases, crear o revisar el environment **`github-release`** en Settings → Environments, limitarlo a `main` y, si se desea aprobación manual adicional, definir un reviewer. **No requiere PAT**; usa `GITHUB_TOKEN` del propio workflow.
 
-**No habilitar la publicación antes de confirmar el registro OIDC y los checks de release.** Si el registro sigue mostrando "Could not resolve GitHub repository", verificar que el repositorio realmente sea público y refrescar/reintentar la pantalla. No reemplazar OIDC por un PAT sin una decisión explícita.
+El ruleset `Protect release tags` protege las etiquetas `v*` frente a actualización y eliminación. El proceso crea una etiqueta ligera que apunta al commit exacto de `main`. Si la etiqueta existe para otro SHA, **falla sin sobrescribir**.
 
-## Diagnóstico y fallos parciales
+## Idempotencia y fallos parciales
 
-- **Marketplace policy Inactive / Never:** aún no intercambió exitosamente el primer OIDC. No es un error de nombres.
-- **Open VSX cannot resolve repository:** confirmar que GitHub ya muestre el repositorio como público y volver a registrar la política; no se puede acreditar OIDC mientras persista el error.
-- **macOS host ENOENT / exit -2:** gate final de autorización bloquea `0.1.1`; el job de compatibilidad anterior tenía `continue-on-error`. No saltar este gate para acelerar publicación.
-- **Un marketplace falla después de que el otro publica:** usar *Re-run failed jobs* sobre el mismo run/artefacto, sin crear una nueva versión y sin reconstruir otro VSIX. Un release parcial debe quedar claramente marcado.
-- `0.1.1` no se ha enviado a ningún registro desde este trabajo.
+- **Solo docs / sin incremento de versión:** `authorize` no publica nada.
+- **Marketplace o Open VSX fallan:** no se crea GitHub Release. Corregir el job fallido y ejecutar *Re-run failed jobs* en el **mismo run**, manteniendo el artifact original.
+- **La etiqueta ya existe en otro commit:** el pipeline falla; no mueve el tag.
+- **GitHub Release existente:** verifica los archivos descargados contra el checksum original; **no sobrescribe assets ni reemite un release inconsistente**.
+- **`main` avanzó antes del Release:** aborta la publicación de una versión obsoleta, protegiendo la relación etiqueta → commit.
+- **Environment `github-release` requiere aprobación:** el job espera esa aprobación; esto no implica que Marketplace/Open VSX deban volver a publicar.
 
-## Comprobación previa al merge
+## Resultado esperado tras el merge de 0.1.2
 
-```bash
-git fetch origin
-git switch feat/enterprise-aaaaa-incident-intelligence-20261108
-git merge --ff-only origin/feat/enterprise-aaaaa-incident-intelligence-20261108
-npm ci --ignore-scripts --no-fund
-npm run check
-npm run package:vsix
-```
+- Versión `0.1.2` en Marketplace y Open VSX.
+- Etiqueta protegida `v0.1.2` apuntando al commit fusionado.
+- [GitHub Release v0.1.2](https://github.com/Drako01/vestigivo/releases/tag/v0.1.2) con:
+  - `vestigivo-0.1.2.vsix`
+  - `SHA256SUMS`
+  - Notas generadas por GitHub.
+- Checksum coincidente para los tres destinos.
 
-**Responsabilidad final:** el propietario decide el merge y la publicación; los gates evitan publicar sin revisión.
+**No publicar ni fusionar esta versión automáticamente desde un PR; el propietario conserva la decisión de merge.** El run de GitHub Actions es la evidencia definitiva de publicación, no esta documentación.

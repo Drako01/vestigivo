@@ -114,3 +114,75 @@ jobs:
           sha256sum --check SHA256SUMS
           unset OVSX_PAT OVSX_ID_TOKEN
           npm exec --yes --package=ovsx@1.3.0 -- ovsx publish "vestigivo-$VERSION.vsix" --trusted-publishing
+
+  github-release:
+    name: Publish GitHub Release with exact registry VSIX
+    needs: [authorize, package, marketplace, open-vsx]
+    if: needs.authorize.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: github-release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.1.8
+        with:
+          name: vestigivo-release-vsix
+      - name: Verify immutable bytes published to both registries
+        env:
+          RELEASE_VERSION: ${{ needs.authorize.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          asset="vestigivo-$RELEASE_VERSION.vsix"
+          test -f "$asset"
+          test -f SHA256SUMS
+          test "$(wc -l < SHA256SUMS)" -eq 1
+          test "$(awk '{print $2}' SHA256SUMS)" = "$asset"
+          sha256sum --check SHA256SUMS
+      - name: Create protected version tag and GitHub Release without overwriting
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_VERSION: ${{ needs.authorize.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="v$RELEASE_VERSION"
+          ref="refs/tags/$tag"
+          asset="vestigivo-$RELEASE_VERSION.vsix"
+          test "$GITHUB_REF" = "refs/heads/main"
+          current_main=$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')
+          if [[ "$current_main" != "$GITHUB_SHA" ]]; then
+            echo "::error::main advanced during publication; refuse an outdated release"
+            exit 1
+          fi
+          if existing=$(gh api "repos/$GH_REPO/git/ref/tags/$tag" --jq '.object.sha' 2>/dev/null); then
+            if [[ "$existing" != "$GITHUB_SHA" ]]; then
+              echo "::error::The protected release tag already targets a different commit"
+              exit 1
+            fi
+          else
+            gh api --method POST "repos/$GH_REPO/git/refs" \
+              --raw-field ref="$ref" --raw-field sha="$GITHUB_SHA" >/dev/null
+          fi
+          recorded=$(gh api "repos/$GH_REPO/git/ref/tags/$tag" --jq '.object.sha')
+          test "$recorded" = "$GITHUB_SHA" || {
+            echo "::error::Protected version tag SHA mismatch"
+            exit 1
+          }
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag exists. Verifying existing published assets without replacement."
+          else
+            gh release create "$tag" "$asset" SHA256SUMS \
+              --verify-tag \
+              --title "Vestigivo RCA $tag" \
+              --generate-notes
+          fi
+          mkdir -p "$RUNNER_TEMP/github-release-check"
+          gh release download "$tag" --pattern "$asset" --dir "$RUNNER_TEMP/github-release-check"
+          gh release download "$tag" --pattern SHA256SUMS --dir "$RUNNER_TEMP/github-release-check"
+          cmp SHA256SUMS "$RUNNER_TEMP/github-release-check/SHA256SUMS"
+          cmp "$asset" "$RUNNER_TEMP/github-release-check/$asset"
+          (cd "$RUNNER_TEMP/github-release-check" && sha256sum --check SHA256SUMS)
+          echo "GitHub Release $tag verified: protected tag, identical VSIX and SHA256SUMS"
