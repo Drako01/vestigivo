@@ -91,7 +91,7 @@ const labels = {
 en:{new:'New case',open:'Open saved',import:'Import evidence',overview:'Overview',timeline:'Timeline',evidence:'Evidence',traces:'Trace tree',correlations:'Correlations',git:'Git context',report:'Report',cases:'Case studio',settings:'Settings',empty:'No evidence imported yet',emptyInfo:'Select a local JSON, JSONL or OTLP JSON file to begin. Nothing is scanned or uploaded automatically.',source:'Sources',events:'Observations',groups:'Correlation groups',hypotheses:'Hypotheses',unverified:'Unverified',readGit:'Read Git (opt-in)',save:'Save locally',duplicate:'Duplicate',archive:'Archive',delete:'Delete saved',exportMarkdown:'Export Markdown',exportJson:'Export JSON',addNote:'Add note',addHypothesis:'Add hypothesis',openSource:'Open source',search:'Search evidence',severity:'Severity',service:'Service',all:'All',note:'Research note',claim:'Falsifiable hypothesis',noGit:'Git is never inspected without an explicit click and workspace trust.',noCausality:'This section shows relationships, not a confirmed root cause.',missingTime:'Time unknown',settingsOpen:'Open extension settings',noResult:'No matching observations.',history:'Reopen, duplicate, annotate or archive a redacted case. Saving is opt-in and data is not encrypted by the extension.'},
 es:{new:'Nuevo caso',open:'Abrir guardado',import:'Importar evidencia',overview:'Resumen',timeline:'Cronología',evidence:'Evidencia',traces:'Árbol de trazas',correlations:'Correlaciones',git:'Contexto Git',report:'Informe',cases:'Investigación',settings:'Configuración',empty:'Aún no hay evidencia importada',emptyInfo:'Seleccioná un archivo JSON, JSONL u OTLP JSON local. No se escanea ni envía nada automáticamente.',source:'Fuentes',events:'Observaciones',groups:'Grupos correlacionados',hypotheses:'Hipótesis',unverified:'Sin verificar',readGit:'Leer Git (opt-in)',save:'Guardar localmente',duplicate:'Duplicar',archive:'Archivar',delete:'Eliminar guardado',exportMarkdown:'Exportar Markdown',exportJson:'Exportar JSON',addNote:'Agregar nota',addHypothesis:'Agregar hipótesis',openSource:'Abrir origen',search:'Buscar evidencia',severity:'Severidad',service:'Servicio',all:'Todos',note:'Nota de investigación',claim:'Hipótesis falsable',noGit:'Git nunca se inspecciona sin un clic explícito y un workspace confiable.',noCausality:'Esta sección muestra relaciones, no una causa raíz confirmada.',missingTime:'Hora desconocida',settingsOpen:'Abrir configuración',noResult:'No hay observaciones coincidentes.',history:'Reabrir, duplicar, anotar o archivar un caso redactado. Guardar es opt-in y la extensión no cifra los datos.'}
 };
-let model = null, tab='overview', filter={text:'',severity:'ALL',service:'ALL',trace:'',request:'',from:'',to:''}, timelinePage=0, noteText='',claimText='';
+let model = null, tab='overview', filter={text:'',severity:'ALL',service:'ALL',trace:'',request:'',from:'',to:''}, timelinePage=0, noteText='',claimText='',planEditorId=null,planDrafts=Object.create(null);
 const t = key => (labels[(model && model.language==='es')?'es':'en'][key] || key);
 const send = (type, more={}) => vscode.postMessage(Object.assign({type},more));
 function el(tag, className, text) { const e=document.createElement(tag); if(className)e.className=className;if(text!==undefined)e.textContent=String(text);return e; }
@@ -208,7 +208,49 @@ const marked=(model.case.bookmarks||[]);
 root.append(card('Bookmarked observations',marked.length?marked.length+' evidence ID(s): '+marked.join(', '):'No bookmarks yet; mark observations in the Timeline or Evidence sections.'));
 const grid=el('div','grid');const n=el('div','card');append(n,el('h3','',t('note')));const area=el('textarea');area.value=noteText;area.maxLength=2000;area.addEventListener('input',()=>noteText=area.value);append(n,area,button(t('addNote'),'note'));grid.append(n);
 const h=el('div','card');append(h,el('h3','',t('claim')));const claim=el('textarea');claim.value=claimText;claim.maxLength=1000;claim.addEventListener('input',()=>claimText=claim.value);append(h,claim,button(t('addHypothesis'),'hypothesis'));grid.append(h);root.append(grid);
-for(const hypothesis of model.case.hypotheses)root.append(card(hypothesis.state,hypothesis.statement));
+for(const hypothesis of model.case.hypotheses){
+  const panel=el('section','card');
+  append(panel,el('span','tag',hypothesis.state),el('h3','',hypothesis.statement));
+  if(hypothesis.plan){
+    const p=hypothesis.plan;
+    append(panel,paragraph('Verification plan · '+p.status+' · '+p.testId,'small'),
+      paragraph('Assertion: '+p.assertion),
+      paragraph('Preconditions: '+p.preconditions),
+      paragraph('Expected: '+p.expectedOutcome),
+      paragraph('Risks: '+p.risks+' · Cost: '+p.cost,'small muted'));
+  } else panel.append(paragraph(model.language==='es'
+    ?'Sin plan de verificación. Registrar una hipótesis no demuestra una causa.'
+    :'Not yet planned. A hypothesis does not establish causality.'));
+  panel.append(button(model.language==='es'?'Planificar verificación':'Plan verification','openPlan',false,{hypothesisId:hypothesis.id}));
+  if(planEditorId===hypothesis.id){
+    const defaults=hypothesis.plan||{};
+    const draft=planDrafts[hypothesis.id]||(planDrafts[hypothesis.id]={
+      assertion:defaults.assertion||'',testId:defaults.testId||'',
+      preconditions:defaults.preconditions||'',expectedOutcome:defaults.expectedOutcome||'',
+      risks:defaults.risks||'',cost:defaults.cost||''
+    });
+    const form=el('div','grid');
+    for(const [field,labelText,max] of [
+      ['assertion','Falsifiable assertion / Afirmación falsable',1000],
+      ['testId','Test ID (letters, numbers, dots or hyphens)',80],
+      ['preconditions','Preconditions / Prerrequisitos',1000],
+      ['expectedOutcome','Expected outcome / Resultado esperado',1000],
+      ['risks','Risks / Riesgos',500],
+      ['cost','Cost and resources / Costos',300]
+    ]){
+      const label=append(el('label','field'),el('span','small',labelText));
+      const input=field==='testId'?el('input'):el('textarea');
+      input.value=draft[field];input.maxLength=max;input.required=true;input.dataset.planField=field;
+      input.addEventListener('input',()=>{draft[field]=input.value});
+      append(label,input);form.append(label);
+    }
+    append(panel,paragraph(model.language==='es'
+      ?'Registro manual. Vestigivo no ejecuta pruebas ni aumenta la confianza automáticamente.'
+      :'Manual record only. Vestigivo does not execute checks or elevate confidence.','small muted'),
+      form,button(model.language==='es'?'Guardar plan':'Save plan','verificationPlan',true,{hypothesisId:hypothesis.id}));
+  }
+  root.append(panel);
+}
 for(const note of model.case.notes)root.append(card(note.at,note.text));
 }
 function settings(root){
@@ -246,6 +288,15 @@ const s=$('status');s.replaceChildren(el('span','status-name',model.status),el('
 const nav=$('navigation');nav.replaceChildren();for(const id of sections){const b=el('button','',t(id));b.type='button';b.setAttribute('role','tab');b.setAttribute('aria-selected',String(tab===id));b.tabIndex=tab===id?0:-1;b.dataset.tab=id;b.id='tab-'+id;b.setAttribute('aria-controls','content');nav.append(b)}renderContent()}
 document.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.dataset.tab){tab=button.dataset.tab;render();return}const action=button.dataset.action;if(!action)return;
 if(action==='timelinePrevious'||action==='timelineNext'){timelinePage=Math.max(0,timelinePage+(action==='timelineNext'?1:-1));renderContent();return}
+if(action==='openPlan'){planEditorId=button.dataset.hypothesisId;renderContent();return}
+if(action==='verificationPlan'){
+  const id=button.dataset.hypothesisId,draft=planDrafts[id];
+  if(!draft)return;
+  const missing=Array.from($('content').querySelectorAll('[data-plan-field]'))
+    .find(input=>!input.value.trim()||!input.checkValidity());
+  if(missing){missing.focus();missing.reportValidity();return}
+  send('verificationPlan',{hypothesisId:id,plan:draft});planEditorId=null;return;
+}
 if(action==='note'){if(noteText.trim())send('note',{text:noteText});noteText='';return}
 if(action==='hypothesis'){if(claimText.trim().length>=10)send('hypothesis',{text:claimText});claimText='';return}
 if(action==='openSource'||action==='bookmark'){send(action,{observationId:button.dataset.observationId});return}
