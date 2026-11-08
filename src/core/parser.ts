@@ -78,7 +78,7 @@ function readBudget(value: number | undefined, fallback: number, ceiling: number
   if (!Number.isInteger(n) || n < 1 || n > ceiling) throw new EvidenceFormatError('SIZE_LIMIT', 'Invalid ' + name + ' budget.');
   return n;
 }
-type Context = { resource?: Obj; scope?: Obj };
+type Context = { resource?: Obj | undefined; scope?: Obj | undefined };
 /** Parses developer-selected UTF-8 JSON/JSONL/OTLP JSON; never executes data or follows links. */
 export function parseEvidence(bytes: Uint8Array, fileName: string, options: ImportOptions = {}): ImportResult {
   const maxBytes = readBudget(options.maxBytes, 8 * 1024 * 1024, 32 * 1024 * 1024, 'maxBytes');
