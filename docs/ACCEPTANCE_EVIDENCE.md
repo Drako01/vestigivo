@@ -1,44 +1,58 @@
 # Vestigivo RCA — Evidencia de aceptación reproducible
 
-Corte: **2026-11-08**. PR **#3 Draft**: https://github.com/Drako01/vestigivo/pull/3
+Corte: **2026-11-08**. Draft PR #3: https://github.com/Drako01/vestigivo/pull/3 — repositorio privado, `main` sin modificar, versión candidata 0.1.0 **NO publicada**.
 
-## Fuente de verdad para el último commit de código
+## SHA y trazabilidad
 
-- Rama: `feat/enterprise-aaaaa-incident-intelligence-20261108`
-- HEAD de código inspeccionado: `72dd9300b8076c0d53a56f38485d3a2bf5cf51a5`
-- CI #42499080671: https://github.com/Drako01/vestigivo/actions/runs/42499080671 — **SUCCESS**.
-- Pasos PASS en ese run: `npm ci`, build + tests, gate cobertura del core, audit de producción, PNG/SVG QA, VSIX package, SHA256SUMS, artifact upload.
-- **36 tests PASS, 0 FAIL.** Coverage sobre `dist/src/core/*.js`: **95,16 % de líneas y 84,00 % de ramas**; thresholds >=85/80.
-- `npm audit --omit=dev --audit-level=high`: **0 vulnerabilidades** en dependencias productivas (no extrapolar a devDependencies).
-- PNG 128x128: alpha esquina 0 / centro 255, SHA-256 `7fb0232cd7a5a2460196e5bbdbe95bbe9cce1a4365b611d9f550d837b2bd0ed0`.
-- PNG 256x256: alpha esquina 0 / centro 255, SHA-256 `a45585d7d34e55f8f0c1d17dde6e6726ffed7e52c3f3eb048bc2a8613a0ba638`.
-- Activity Bar SVG: `currentColor` y sin rectángulo de fondo; PASS.
-- VSIX `vestigivo-0.1.0.vsix` (26 archivos, 51,07 KB), SHA-256 `ff721e4c440a28f5ef90531a2a3f937ecba5ed4698024939112a8244e2ca4403`. El SHA del VSIX es distinto del SHA del ZIP contenedor del artefacto.
+- HEAD de **código y tests** validado: `e08deb1f17d33e470fa78fb22931bce2feb7929e`.
+- CI integral **SUCCESS** [#42500482525](https://github.com/Drako01/vestigivo/actions/runs/42500482525). Los commits de **solo documentación** posteriores no cambian ese binario.
+- Tests `45 PASS / 0 FAIL`; cobertura core `96,66 % líneas / 87,61 % branches`, meta >=85/80.
+- Pasos PASS: `npm ci` (sin scripts), compilación TypeScript strict, tests+coverage, selección de scope **por diff completo del PR**, Extension Development Host Linux, benchmark 1K/10K/100K, producción `npm audit --omit=dev --audit-level=high`, branding PNG/SVG, empaquetado VSIX y artefactos privados.
+- Extension Host real Linux [#42500482525](https://github.com/Drako01/vestigivo/actions/runs/42500482525): activación, comandos registrados, pestaña central, roundtrip storage y delete, apertura del contenedor Activity Bar **mediante comando**. NO equivale a clic físico ni a instalación del VSIX.
+- VSIX `vestigivo-0.1.0.vsix`: **26 archivos, ~54,36 KB**, SHA-256 `ba580db5de370ffd647fff938875f3fc54e900b4ddd27dfbd107edd01bc053a9`. Artefacto en el run privado.
 
-## Extension Host
+## Rendimiento real — benchmark sintético del core
 
-- CI #42497750439 (código SHA `36491449c856b4b91505fb4751b37919d76bd507`) pasó Extension Development Host real en Linux: activación, comandos registrados y pestaña central.
-- Se agregó después una prueba de almacenamiento transaccional y apertura del contenedor Activity Bar. **No está acreditada su ejecución final**: en #42499080671, Host smoke = **SKIP** por filtrado de cambios. No marcar E2E global de la nueva UI como PASS.
-- No hay captura real ni QA de clic físico Activity Bar, dark/light/alto contraste, lector de pantalla o empaquetado instalado como VSIX.
+Run: [#42500482525](https://github.com/Drako01/vestigivo/actions/runs/42500482525). `scripts/benchmark.cjs`, siete muestras por tamaño, percentil discreto; entorno **Node v22.23.4 / Linux x64 / AMD EPYC 7763 (2 CPU reportadas), 8.317.030.400 B RAM**.
 
-## Benchmarks y matriz
+| Operación | 1K P50 | 1K P95 | 10K P50 | 10K P95 |
+|---|---:|---:|---:|---:|
+| Parseo JSONL | 32,385 ms | 55,307 ms | 243,676 ms | 378,035 ms |
+| Correlación | 1,635 ms | 16,949 ms | 10,784 ms | 32,763 ms |
+| Filtro en arrays de observaciones | 0,038 ms | 0,151 ms | 0,185 ms | 0,752 ms |
+| Exportación Markdown | 100,536 ms | 103,442 ms | 845,230 ms | 1071,101 ms |
 
-- `scripts/benchmark.cjs` existe y genera `benchmark-result.json` para 1K, 10K y rechazo/truncamiento de 100K.
-- En #42499080671, paso benchmark = **SKIP** por `paths`; **sin P50/P95/RSS verificables**.
-- Windows, macOS, WSL, SSH y Dev Containers: **BLOCKED** sin pruebas ejecutadas.
-- Credenciales reales Sentry/Grafana: **BLOCKED** sin autorización; se ejecutaron contratos de proveedor con mocks como parte de tests.
+- Tamaños: 1K **162.100 bytes**; 10K **1.650.919 bytes**; ambos importados al 100% en estado `COMPLETE`.
+- 100K: **16.809.100 bytes**, estado **SIZE_LIMIT** (rechazo esperado, sin importación parcial oculta).
+- RSS al final: **208.613.376 bytes**; memoria pico RSS del proceso **203.724 KiB** (`process.resourceUsage`), sobre un solo runner. No mezclar con consumo de toda la app VS Code.
+- **No se midió** FPS, scroll, render/paint del Webview, latencia de picker ni Extension Host CPU con importación concurrente. No extrapolar estos tiempos a Windows/macOS.
 
-## Limitaciones y riesgos restantes
+## Seguridad y RCA
 
-- Reporte `docs/THREAT_MODEL.md` y checklist necesitan STRIDE y revisión de seguridad integral; no declarar 0 P0/P1 auditados.
-- `npm install` de primeras corridas reportó 3 advisories moderados en árbol completo/dev; pendiente clasificación. Auditoría runtime separada PASS.
-- Las rutas de endpoints Sentry/Grafana, paginación y permisos deben contrastarse con documentación real, con live QA solo autorizado.
-- Sin medición de scroll, CPU/UI responsiveness en hardware objetivo.
-- La validación del SHA exacto tras nuevo commit es necesaria para cambios de código; los cambios solo de documentación no requieren repetir typecheck/VSIX.
+- Persistencia de casos endurecida: whitelist del objeto raíz, UUID canónico, validación de identidad de archivo, verificación consistente de `CONFIRMED`; **no es firma/tamper-proof**.
+- Comparación de CHECK_PASSED/CHECK_FAILED/TIMEOUT/FLAKY/INCONCLUSIVE conservadora, con tests de negativo.
+- Planes de verificación humanos con assertion, test ID, prerequisitos, riesgo, costo y resultado esperado; persisten como `PLANNED`; no ejecutan pruebas ni elevan confianza.
+- Pre-cancelación de proveedor: test asegura 0 invocaciones al transporte si `AbortSignal` ya estaba cancelada. Integraciones live requieren autorización y credenciales; **NO fueron llamadas**.
+- Matriz STRIDE en [THREAT_MODEL.md](THREAT_MODEL.md): los riesgos residuales abiertos no cuentan como PASS de seguridad integral.
+- Dependencias runtime: auditoría high PASS; advisories previos en devDependencies precisan clasificación completa con árbol actual.
 
-## Reproducción
+## QA real faltante / bloqueos
+
+| Prueba | Estado | Razón / gate necesario |
+|---|---|---|
+| Click físico Activity Bar (una acción), tabs, picker, cancelación y navegación | BLOCKED | E2E GUI real sobre revisión final, no solo ejecución del comando |
+| Instalar VSIX resultante en host limpio y reiniciar VS Code | BLOCKED | Extension Development Host no equivale a extensión instalada |
+| Dark/light/high contrast, screen reader, foco, teclado completo, zoom, ES/EN | BLOCKED | QA visual/manual y capturas auténticas |
+| Windows/macOS/WSL/SSH/Dev Containers | BLOCKED | Entornos no ejecutados en este corte |
+| Sentry/Grafana live con scope y paginación reales | BLOCKED | Tokens/cuentas autorizadas no disponibles |
+| Egress monitor, falsos negativos PII, fuzz y mutation, licencia/SBOM | PARTIAL | Falta instrumentación/evidencia independiente |
+| SHA equivalente al integrado, legal clearance y publicación | OWNER BLOCKED | PR Draft sin aprobación; no se hizo merge |
+
+## Reproducción en entorno autorizado
 
 ```bash
+git fetch origin
+git switch feat/enterprise-aaaaa-incident-intelligence-20261108
 npm ci --ignore-scripts --no-fund
 npm run check
 npm run brand:verify
@@ -47,6 +61,6 @@ npm run package:vsix
 sha256sum vestigivo-0.1.0.vsix
 ```
 
-Para pruebas de Host se requieren VS Code y runtime gráfico (en Linux CI: `xvfb-run -a npm run test:host`). El éxito del comando de desarrollo no demuestra la instalación del VSIX.
+Para E2E de desarrollo Linux se requiere escritorio o `xvfb-run -a npm run test:host`. Para Windows/macOS se necesitan sus runners y un VS Code real. Cada gate debe adjuntar SHA, sistema, logs y evidencia; **SKIP/BLOCKED nunca equivalen a PASS**.
 
-**Conclusión:** CI núcleo y empaquetado comprobados. DoD fases 0–6 aún incompleto; PR #3 sigue Draft y el repositorio privado.
+**Conclusión:** el código validado pasa gates automatizados del núcleo/Host Linux, benchmarks y artefacto privado. Las siete fases siguen **PARTIAL** por DoD no acreditado. **NOT READY FOR MERGE / PUBLISH**.
