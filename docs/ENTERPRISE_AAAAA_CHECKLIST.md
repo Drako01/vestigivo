@@ -91,9 +91,10 @@
 
 - [x] Un único Draft PR desde main; ninguna modificación directa a main, merge, release ni publicación.
 - [x] Workflow de PR, instalación reproducible `npm ci`, typecheck/tests, cobertura, brand QA, auditoría producción y empaquetado; no workflow de publish.
-- [x] VSIX de prueba `vestigivo-0.1.0.vsix` **generado** en #42500482525: 26 archivos, ~54,36 KB; SHA-256 `ba580db5de370ffd647fff938875f3fc54e900b4ddd27dfbd107edd01bc053a9`.
+- [x] VSIX de prueba `vestigivo-0.1.0.vsix` **generado e instalado en perfil aislado** por CI Linux #42501342938: 26 archivos, ~54,36 KB; SHA-256 `b12ff3ce3c7705b5323a4e607cb25d8c62adf8127fe63bc7c69bf07ad1be7a6e`.
 - [x] Acceso al artefacto y SHA256SUMS vía GitHub Actions privado.
-- [ ] Instalar el **VSIX empaquetado** y ejecutar E2E sobre esa instalación (Extension Development Host del código no equivale a VSIX instalado).
+- [x] VSIX `0.1.0` instalado con CLI real en perfil aislado y Extension Host **sobre el contenido extraído del paquete**, en Linux. [CI #42501342938](https://github.com/Drako01/vestigivo/actions/runs/42501342938) PASS, SHA de código `c534098b3d40b42d25374e2810e0e8562c07004b`.
+- [ ] Instalación/E2E de VSIX en perfiles nativos Windows/macOS, no solo empaquetado y Development Host; QA con clic físico y accesibilidad pendiente.
 - [ ] Garantizar branch protection/merge queue o HEAD base actualizado para equivalencia SHA validado vs integrado.
 - [ ] Matriz Windows/macOS/Linux, renders reales finales de UI, README ES/EN final, changelog/troubleshooting y publicación solo con aprobación.
 - [ ] Inventario final dependencias/licencias, SBOM si corresponde, retención de evidencias de release y reporte de riesgos.
@@ -103,7 +104,7 @@
 
 - **Fases aceptadas 100 %:** 0 de 7. Todas PARTIAL. No hay porcentaje global de funcionalidades rigurosamente medido.
 - **Gates sí aprobados:** 45 tests/0 fallos, cobertura de core superior a mínimos, benchmark real, Extension Host Linux (comandos, editor central, Activity Bar mediante comando, almacenamiento), audit runtime, PNG alpha, `npm ci`, compilación y VSIX candidato sobre SHA `e08deb1`.
-- **Gates específicos no aprobados:** clic físico Activity Bar, VSIX instalado, E2E visual final/UX a11y, Webview FPS/scroll, **Host macOS falló con exit -2 pese a job verde**, WSL/SSH/containers, live APIs, seguridad independiente, capturas reales y firma del propietario.
+- **Gates específicos no aprobados:** clic físico Activity Bar, **VSIX instalado fuera de Linux**, E2E visual final/UX a11y, Webview FPS/scroll, **Host macOS falló con ENOENT / exit -2 pese a job verde**, WSL/SSH/containers, live APIs, seguridad independiente, capturas reales y firma del propietario.
 - **Estado del producto:** implementación funcional parcial, **NOT READY FOR MERGE / NOT READY FOR PUBLISH**.
 
 La nueva sesión debe recuperar este archivo, inspeccionar el HEAD del PR #3 y continuar implementando el DoD de las fases 0–6, no generar otra propuesta.
@@ -122,7 +123,16 @@ La nueva sesión debe recuperar este archivo, inspeccionar el HEAD del PR #3 y c
 
 - [x] Añadido `test/host/installed.ts`: instala `vestigivo-0.1.0.vsix` con CLI real en perfil aislado, confirma listado y manifiesto instalado, y arranca Extension Host sobre los **archivos extraídos del paquete**, no sobre `src`.
 - [x] Añadidos `npm run test:vsix-host` y gate Linux `xvfb-run -a npm run test:vsix-host` **bloqueante** en CI; el VSIX permanece privado.
-- [ ] Resultado de la primera ejecución en CI: **PENDING** al registrar este checkpoint. Este gate es smoke de paquete instalado, **no** prueba física de clic/lectores de pantalla ni equivalencia de publicación.
+- [x] Primera ejecución **PASS**: [CI #42501342938](https://github.com/Drako01/vestigivo/actions/runs/42501342938), Linux 45/45 tests y VSIX instalado/manifest+Extension Host contra bits empaquetados. SHA-256 VSIX Linux `b12ff3ce3c7705b5323a4e607cb25d8c62adf8127fe63bc7c69bf07ad1be7a6e`.
+- [ ] Gate no mide clic físico, capturas, pantalla accesible ni publicación.
 - [ ] Probar macOS Host que registró `exit -2` con logs/causa; no confundir job verde con Host verde.
 
 La siguiente sesión debe comenzar por el último run del PR #3 y actualizar este bloque con SHA, PASS/FAIL y errores; evitar crear otro PR. **No publicar/fusionar.**
+
+### Checkpoint — VSIX instalado: resultado real (2026-11-08)
+
+- **Último código validado:** `c534098b3d40b42d25374e2810e0e8562c07004b`; docs de checkpoint posteriores no alteran el binario. [CI #42501342938](https://github.com/Drako01/vestigivo/actions/runs/42501342938).
+- **Evidencia concreta**: `PACKAGED VSIX INSTALL PASS` (CLI, listado, manifest, entry); `PACKAGED VSIX HOST PASS` (comandos, editor central, storage) ejecutando el árbol **instalado** desde el VSIX y no el repo. 45 tests PASS, 0 FAIL.
+- **Linux VSIX**: SHA-256 `b12ff3ce3c7705b5323a4e607cb25d8c62adf8127fe63bc7c69bf07ad1be7a6e`.
+- **Limitación:** el test invoca `runTests` con `extensionDevelopmentPath` apuntando al directorio **instalado**, para ejecutar sus bytes. Confirma la instalación y el funcionamiento de esos archivos, **no** mide activación automática del paquete en un perfil de usuario sin `extensionDevelopmentPath`, ni clic físico/UX, ni macOS.
+- **Próximo paso:** investigar `macOS ENOENT`, ejecutar VSIX smoke nativo, accesibilidad/temas/capturas reales y flujos importación/cancelación.
