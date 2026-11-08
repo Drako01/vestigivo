@@ -206,3 +206,15 @@ La siguiente sesión debe comenzar por el último run del PR #3 y actualizar est
 - [ ] **Merge/publish quedan reservados al propietario y sujetos a gates.** El pipeline de publicación en `main` se activará automáticamente al fusionar `0.1.1` si pasan sus guardias de versión/CI.
 
 **Nota para próxima sesión:** revisar PR #3, el HEAD y la ejecución de CI más reciente; luego los pendientes no cerrados, no un nuevo plan.
+
+### Checkpoint — Capturas auténticas incorporadas al README (2026-11-08)
+
+- [x] **Cuatro capturas PNG reales** tomadas mediante `scrot` desde **Visual Studio Code Electron Extension Development Host Linux/Xvfb**, no mockups ni renders gráficos; CI de captura [#42507835267](https://github.com/Drako01/vestigivo/actions/runs/42507835267) **PASS** tras corregir el guard de modo Test; archivos versionados por commit `fd8ca8d463525d2dcff3efc26b74438e28f6658e`.
+- [x] `media/screenshots/01-overview.png` (112.396 bytes), `02-timeline.png` (111.408), `03-trace-tree.png` (110.244), `04-case-studio.png` (113.199). Resolución verificada **1440 × 900**; cuatro SHA de contenido distintos.
+- [x] **Privacidad demostrable:** fixture `test/fixtures/visual-demo.jsonl` con observaciones inventadas y atributo `demo.synthetic=true`, sin credenciales, red o datos de clientes. El harness solamente habilita comandos visuales con `ExtensionMode.Test/Development` y `VESTIGIVO_SCREENSHOT_MODE=1`; no disponible en producción.
+- [x] README principal convertido en galería profesional con hero Overview y secciones Timeline, Trace Tree y Case Studio; leyendas transparentes sobre datos sintéticos. Guía española también enlaza las cuatro imágenes.
+- [x] Nuevo gate `npm run screenshots:verify` valida que README enlace todas las imágenes, PNG auténticos, presupuesto de peso, dimensiones, cuatro capturas diferentes y fixture sintético. Integrado al CI Linux antes del empaquetado.
+- [ ] **CI final del HEAD que contiene todos los assets/docs/checks:** confirmar PASS de los tres required checks con SHA exacto antes del merge.
+- [ ] Capturas físicas de Windows/macOS, accesibilidad visual/auditoría con screen reader, WSL/SSH/Dev Containers y otras tareas aún abiertas en fases 0–6 permanecen pendientes; **no convertir el éxito del gate visual en un cierre falso del roadmap**.
+
+**Resultado:** eliminado el bloqueo específico de README sin capturas; la decisión de merge y release continúa en manos del propietario. El PR #3 sigue abierto, no fusionado.
