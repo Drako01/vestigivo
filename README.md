@@ -1,3 +1,5 @@
+<p align="center"><img src="media/brand/vestigivo-icon-256.png" alt="Vestigivo RCA — approved evidence graph" width="160"></p>
+
 # Vestigivo RCA — Incident Intelligence & Root Cause Analysis
 
 # Vestigivo RCA

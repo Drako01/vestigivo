@@ -27,6 +27,8 @@ jobs:
         run: npm run check
       - name: Audit runtime dependencies
         run: npm audit --omit=dev --audit-level=high
+      - name: Verify PNG dimensions, transparency and Activity Bar SVG
+        run: npm run brand:verify
       - name: Package a private VSIX candidate
         run: npx vsce package --no-dependencies
       - name: Record checksum and inventory

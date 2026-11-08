@@ -11,3 +11,4 @@ tsconfig.json
 coverage/**
 node_modules/**
 !node_modules/.bin/**
+scripts/**
