@@ -94,6 +94,7 @@
     "brand:verify": "node scripts/verify-brand.cjs",
     "test:coverage": "npm run check",
     "test:host": "node dist/test/host/run.js",
+    "test:vsix-host": "node dist/test/host/installed.js",
     "benchmark": "node scripts/benchmark.cjs"
   },
   "devDependencies": {
