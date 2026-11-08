@@ -194,3 +194,15 @@ La siguiente sesión debe comenzar por el último run del PR #3 y actualizar est
 - [ ] El PR continúa en **Draft**; no realizar merge ni publicar 0.1.1 hasta completar DoD.
 
 **Regla de continuidad:** este checkpoint reemplaza el estado histórico "macOS ENOENT bloqueado". `0.1.1` sigue siendo una candidata, no un release.
+
+### Checkpoint — PR #3 marcado Ready for Review (2026-11-08)
+
+- [x] **Confirmado en GitHub:** PR #3 `draft=false`, `state=open`, `mergeable=true`. El propietario quitó la condición Draft para habilitar revisión; esto **no equivale** a aprobación de merge o release ni a DoD completo.
+- [x] Repositorio público; el propietario confirma ambos Trusted Publishers configurados para `publish.yml`, con environments `marketplace` y `open-vsx`.
+- [x] [CI #42506224026](https://github.com/Drako01/vestigivo/actions/runs/42506224026) pasó en Linux, Windows y macOS, incluidos los Extension Hosts nativos (SHA `4feca58c7c7e4376bd5f4d6b012e1d74e33f07de`).
+- [ ] Último HEAD previo a este checkpoint `4e83473728a684831556af3964276a5412f9f7fb`: [CI #42506579819](https://github.com/Drako01/vestigivo/actions/runs/42506579819) seguía ejecutándose al comprobarlo; Linux PASS, Windows/macOS en progreso. Confirmar conclusión final antes de cualquier merge.
+- [ ] QA gráfico real y screenshots para README, controles avanzados RCA/Case Studio, seguridad final y demás pendientes 0–6 del checklist. No declarar funcionalidades faltantes como cerradas.
+- [ ] Validar protections de environments y OIDC real al primer publish; el cambio `Draft → Ready for review` no publica nada.
+- [ ] **Merge/publish quedan reservados al propietario y sujetos a gates.** El pipeline de publicación en `main` se activará automáticamente al fusionar `0.1.1` si pasan sus guardias de versión/CI.
+
+**Nota para próxima sesión:** revisar PR #3, el HEAD y la ejecución de CI más reciente; luego los pendientes no cerrados, no un nuevo plan.
