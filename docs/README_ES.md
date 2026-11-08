@@ -4,7 +4,7 @@
 
 Vestigivo RCA permite investigar incidentes dentro de Visual Studio Code, correlacionando evidencias seleccionadas manualmente y preservando la trazabilidad de cada observación. **Una correlación nunca constituye por sí sola una causa raíz confirmada**.
 
-## Funcionalidades de la candidata 0.1.1
+## Funcionalidades de la candidata 0.1.2
 
 | Módulo | Función |
 | --- | --- |
@@ -69,7 +69,7 @@ npm run check
 npm run package:vsix
 ```
 
-**Publicación:** la 0.1.0 se distribuye manualmente. La 0.1.1 se publicará desde GitHub Actions tras el merge autorizado a `main`, nunca desde el Draft PR. Ver [instrucciones de Trusted Publishing](RELEASE_SETUP.md).
+**Publicación:** la 0.1.0 se distribuyó manualmente y la 0.1.1 se publicó mediante OIDC en los dos registros. La 0.1.2 agregará además un [GitHub Release](https://github.com/Drako01/vestigivo/releases) con el mismo VSIX y su checksum, tras el merge autorizado a `main`. Ver [instrucciones de Trusted Publishing](RELEASE_SETUP.md).
 
 ---
 
