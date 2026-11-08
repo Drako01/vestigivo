@@ -117,3 +117,12 @@ La nueva sesión debe recuperar este archivo, inspeccionar el HEAD del PR #3 y c
 - Los SHA distintos de VSIX entre plataformas muestran que los paquetes no son byte-for-byte idénticos. Reproducibilidad binaria multiplataforma aún no acreditada.
 - **Próximo bloque prioritario:** hacer inequívoco el estado Host macOS, agregar E2E sobre VSIX **instalado** con perfil aislado, no limitarse a Extension Development Host. Después, UX real y screen-reader.
 - **No hay capturas finales, ni publicación, ni merge.** `main` intacto; PR #3 sigue Draft. Se agregará una entrada de checkpoint al cerrar cada bloque posterior.
+
+### Checkpoint — VSIX empaquetado (2026-11-08)
+
+- [x] Añadido `test/host/installed.ts`: instala `vestigivo-0.1.0.vsix` con CLI real en perfil aislado, confirma listado y manifiesto instalado, y arranca Extension Host sobre los **archivos extraídos del paquete**, no sobre `src`.
+- [x] Añadidos `npm run test:vsix-host` y gate Linux `xvfb-run -a npm run test:vsix-host` **bloqueante** en CI; el VSIX permanece privado.
+- [ ] Resultado de la primera ejecución en CI: **PENDING** al registrar este checkpoint. Este gate es smoke de paquete instalado, **no** prueba física de clic/lectores de pantalla ni equivalencia de publicación.
+- [ ] Probar macOS Host que registró `exit -2` con logs/causa; no confundir job verde con Host verde.
+
+La siguiente sesión debe comenzar por el último run del PR #3 y actualizar este bloque con SHA, PASS/FAIL y errores; evitar crear otro PR. **No publicar/fusionar.**
