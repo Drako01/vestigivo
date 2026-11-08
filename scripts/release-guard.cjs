@@ -4,9 +4,9 @@ const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
 const { readFileSync, appendFileSync } = require('node:fs');
 const REQUIRED_JOBS = Object.freeze([
-  'TypeScript, core tests, scoped E2E and private VSIX',
-  'Native OS validation (windows-latest)',
-  'Native OS validation (macos-latest)'
+  'Verify (ubuntu-latest)',
+  'Verify (windows-latest)',
+  'Verify (macos-latest)'
 ]);
 function versionParts(s) {
   assert(/^\d+\.\d+\.\d+$/.test(s), 'Exact stable semver required');
