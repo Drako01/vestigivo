@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCase, loadCase } from '../src/core/case';
-import { compareCheckOutcomes, evaluateVerification, proposeHypothesis } from '../src/core/verification';
+import { compareCheckOutcomes, evaluateVerification, proposeHypothesis, planVerification } from '../src/core/verification';
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 const fp = { id: 'before', testId: 't', inputHash: 'a', configHash: 'b', environmentHash: 'c', versionHash: 'v1' };
 const result = () => evaluateVerification(proposeHypothesis('The controlled change explains this specific failing assertion.'), {
@@ -67,4 +67,26 @@ test('Unknown persisted top-level fields never reach reopened case or redacted e
   assert.equal(Object.hasOwn(opened, 'password'), false);
   assert.equal(Object.hasOwn(opened, 'leaked'), false);
   assert.equal(JSON.stringify(opened).includes('SHOULD_NOT_SURVIVE'), false);
+});
+
+test('Manual verification plan is persisted, redacted and never upgrades hypothesis confidence', () => {
+  const hypothesis = proposeHypothesis('A feature toggle can produce the observed isolated failure.');
+  const input = {
+    assertion: 'Run an isolated before-and-after check on the same input.',
+    testId: 'incident-check-01',
+    preconditions: 'Authorized staging environment; compare config and inputs.',
+    expectedOutcome: 'The isolated check fails only after a controlled change.',
+    risks: 'Risk of a false positive or production side-effects.',
+    cost: 'Two repetitions and analyst review.'
+  };
+  const planned = planVerification(hypothesis, input);
+  assert.equal(planned.state, 'HYPOTHESIS');
+  assert.equal(planned.verification, null);
+  assert.equal(planned.plan?.status, 'PLANNED');
+  const restored = loadCase(clone({ ...createCase(), hypotheses: [planned] }));
+  assert.equal(restored.hypotheses[0]?.plan?.testId, input.testId);
+  assert.equal(restored.hypotheses[0]?.state, 'HYPOTHESIS');
+  assert.throws(() => planVerification(hypothesis,{...input,testId:'../bash -c rm'}), /Verification plan/);
+  assert.throws(() => loadCase({ ...createCase(), hypotheses: [{...planned,plan:{...planned.plan, hypothesisId:'other'}}] }));
+  assert.equal(planVerification(hypothesis,{...input,risks:'Notify admin@example.com'}).plan?.risks.includes('admin@example.com'),false);
 });
