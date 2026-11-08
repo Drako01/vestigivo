@@ -142,3 +142,9 @@ test('Redacted note and authorization header have no retained secret', () => {
   const incident = addNote(createCase(),'password=very-secret-value');
   assert.ok(!exportJson(incident).includes('very-secret-value'));
 });
+
+test('Oversized Markdown export is rejected rather than silently cut', () => {
+  const incident = createCase();
+  incident.limitations = [ 'x'.repeat(2_000_100) ];
+  assert.throws(() => exportMarkdown(incident), /exceeds.*limit/);
+});

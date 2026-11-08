@@ -24,7 +24,9 @@ export function exportMarkdown(input: IncidentCase): string {
     ...c.limitations.map(value => '- ' + md(value)),
     '', 'No automated root cause determination. Redaction is best-effort.', ''
   ];
-  return lines.join('\n').slice(0, 2_000_000);
+  const content = lines.join('\n');
+  if (content.length > 2_000_000) throw new Error('Markdown report exceeds the 2,000,000-character export limit; use redacted JSON instead. No partial report was written.');
+  return content;
 }
 export function exportJson(input: IncidentCase): string {
   return JSON.stringify({ exportSchemaVersion: 1, application: 'Vestigivo RCA',

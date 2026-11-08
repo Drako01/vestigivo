@@ -60,7 +60,11 @@ export class ControlCenter implements vscode.Disposable {
   private send(): void {
     const value = {
       type: 'state', case: this.incident, status: this.status, details: redactText(this.details),
-      git: this.git, busy: this.busy, reportPreview: exportMarkdown(this.incident),
+      git: this.git, busy: this.busy,
+      reportPreview: exportMarkdown({ ...this.incident,
+        observations: this.incident.observations.slice(0, 75),
+        correlations: this.incident.correlations.slice(0, 15) }),
+      previewOmitted: Math.max(0, this.incident.observations.length - 75),
       providers: this.connections, providerResult: this.providerResult,
       language: vscode.workspace.getConfiguration('vestigivo').get<string>('language', 'auto') === 'auto'
         ? (vscode.env.language.toLowerCase().startsWith('es') ? 'es' : 'en')
