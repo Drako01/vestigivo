@@ -39,9 +39,19 @@ async function authorize() {
   const pkg=JSON.parse(readFileSync('package.json','utf8'));
   assert.equal(pkg.publisher,'armotusitio');
   assert.equal(pkg.name,'vestigivo');
-  const previous=JSON.parse(git('show','HEAD^:package.json'));
-  if(previous.version===pkg.version){output(false);console.log('Version unchanged: no publication.');return;}
-  assert(newer(pkg.version,previous.version),'Version must strictly increase');
+  // The initial repository main may contain only docs and no package.json.
+  // This one-time bootstrap is allowed ONLY for 0.1.1 after the owner's manual 0.1.0.
+  const hasPreviousPackage = git('ls-tree','HEAD^','--','package.json').length > 0;
+  if (!hasPreviousPackage) {
+    assert.equal(pkg.version,'0.1.1','First package added to main may only publish 0.1.1');
+    assert(readFileSync('CHANGELOG.md','utf8').includes('## [0.1.0]'),
+      'Bootstrap requires the manual 0.1.0 version recorded in changelog');
+  }
+  const previousVersion = hasPreviousPackage
+    ? JSON.parse(git('show','HEAD^:package.json')).version
+    : '0.1.0';
+  if(previousVersion===pkg.version){output(false);console.log('Version unchanged: no publication.');return;}
+  assert(newer(pkg.version,previousVersion),'Version must strictly increase');
   assert(readFileSync('CHANGELOG.md','utf8').includes('## ['+pkg.version+']'),'Missing changelog for released version');
   assert(pkg.version!=='0.1.0','Initial 0.1.0 publication is explicitly manual');
   const pulls=await api('commits/'+process.env.GITHUB_SHA+'/pulls');
