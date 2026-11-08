@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { createCase, importIntoCase, addNote, duplicateCase } from '../core/case';
 import { parseEvidence, EvidenceFormatError } from '../core/parser';
 import { exportMarkdown, exportJson } from '../core/report';
+import { traceTree } from '../core/correlate';
 import { redactText } from '../core/redact';
 import { proposeHypothesis } from '../core/verification';
 import type { IncidentCase } from '../core/types';
@@ -66,6 +67,8 @@ export class ControlCenter implements vscode.Disposable {
         correlations: this.incident.correlations.slice(0, 15) }),
       previewOmitted: Math.max(0, this.incident.observations.length - 75),
       providers: this.connections, providerResult: this.providerResult,
+      traceNodes: traceTree(this.incident.observations.slice(0, 400)),
+      traceCount: this.incident.observations.filter(o => o.spanId && o.traceId).length,
       language: vscode.workspace.getConfiguration('vestigivo').get<string>('language', 'auto') === 'auto'
         ? (vscode.env.language.toLowerCase().startsWith('es') ? 'es' : 'en')
         : vscode.workspace.getConfiguration('vestigivo').get<string>('language', 'en')

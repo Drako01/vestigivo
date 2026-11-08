@@ -40,12 +40,45 @@ export function timeline(observations: readonly Observation[]): Observation[] {
       a.provenance.ordinal - b.provenance.ordinal || a.id.localeCompare(b.id);
   });
 }
-export interface TraceNode { observation: Observation; parentId: string | null; missingParent: boolean; }
+export interface TraceNode {
+  observation: Observation;
+  parentId: string | null;
+  missingParent: boolean;
+  ambiguousParent: boolean;
+  cycleDetected: boolean;
+}
+/** Exact trace-scoped span tree. A repeated span ID is ambiguous, not a valid edge. */
 export function traceTree(observations: readonly Observation[]): TraceNode[] {
-  const known = new Set(observations.filter(o => o.traceId && o.spanId).map(o => o.traceId + ':' + o.spanId));
-  return timeline(observations).filter(o => o.spanId).map(o => ({
-    observation: o,
-    parentId: o.parentSpanId ?? null,
-    missingParent: !!(o.parentSpanId && !known.has((o.traceId ?? '') + ':' + o.parentSpanId))
-  }));
+  const spans = timeline(observations).filter(o => o.traceId && o.spanId);
+  const grouped = new Map<string, Observation[]>();
+  const key = (trace: string, span: string): string => trace + '\u0000' + span;
+  for (const o of spans) {
+    const k = key(o.traceId!, o.spanId!);
+    const bucket = grouped.get(k) ?? [];
+    bucket.push(o);
+    grouped.set(k, bucket);
+  }
+  return spans.map(observation => {
+    let missingParent = false;
+    let ambiguousParent = false;
+    let cycleDetected = false;
+    let cursor = observation;
+    const visited = new Set<string>([key(observation.traceId!, observation.spanId!)]);
+    for (let count = 0; count <= spans.length; count++) {
+      if (!cursor.parentSpanId) break;
+      const k = key(cursor.traceId!, cursor.parentSpanId);
+      const parents = grouped.get(k) ?? [];
+      if (parents.length === 0) { missingParent = true; break; }
+      if (parents.length !== 1) { ambiguousParent = true; break; }
+      if (visited.has(k)) { cycleDetected = true; break; }
+      visited.add(k);
+      const parent = parents[0];
+      if (!parent) break;
+      cursor = parent;
+    }
+    return {
+      observation, parentId: observation.parentSpanId ?? null,
+      missingParent, ambiguousParent, cycleDetected
+    };
+  });
 }

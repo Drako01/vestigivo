@@ -148,3 +148,17 @@ test('Oversized Markdown export is rejected rather than silently cut', () => {
   incident.limitations = [ 'x'.repeat(2_000_100) ];
   assert.throws(() => exportMarkdown(incident), /exceeds.*limit/);
 });
+
+test('Trace tree labels cyclic and duplicated parent IDs rather than inventing a hierarchy', () => {
+  const cycle = parseEvidence(record([
+    {message:'A',traceId:'trace1',spanId:'a',parentSpanId:'b'},
+    {message:'B',traceId:'trace1',spanId:'b',parentSpanId:'a'}
+  ]),'cycles.json');
+  assert.ok(traceTree(cycle.observations).every(n => n.cycleDetected));
+  const ambiguous = parseEvidence(record([
+    {message:'parent 1',traceId:'trace1',spanId:'p'},
+    {message:'parent 2',traceId:'trace1',spanId:'p'},
+    {message:'child',traceId:'trace1',spanId:'c',parentSpanId:'p'}
+  ]),'duplicates.json');
+  assert.equal(traceTree(ambiguous.observations).find(n=>n.observation.spanId==='c')?.ambiguousParent,true);
+});
