@@ -91,7 +91,7 @@ const labels = {
 en:{new:'New case',open:'Open saved',import:'Import evidence',overview:'Overview',timeline:'Timeline',evidence:'Evidence',traces:'Trace tree',correlations:'Correlations',git:'Git context',report:'Report',cases:'Case studio',settings:'Settings',empty:'No evidence imported yet',emptyInfo:'Select a local JSON, JSONL or OTLP JSON file to begin. Nothing is scanned or uploaded automatically.',source:'Sources',events:'Observations',groups:'Correlation groups',hypotheses:'Hypotheses',unverified:'Unverified',readGit:'Read Git (opt-in)',save:'Save locally',duplicate:'Duplicate',archive:'Archive',delete:'Delete saved',exportMarkdown:'Export Markdown',exportJson:'Export JSON',addNote:'Add note',addHypothesis:'Add hypothesis',openSource:'Open source',search:'Search evidence',severity:'Severity',service:'Service',all:'All',note:'Research note',claim:'Falsifiable hypothesis',noGit:'Git is never inspected without an explicit click and workspace trust.',noCausality:'This section shows relationships, not a confirmed root cause.',missingTime:'Time unknown',settingsOpen:'Open extension settings',noResult:'No matching observations.',history:'Reopen, duplicate, annotate or archive a redacted case. Saving is opt-in and data is not encrypted by the extension.'},
 es:{new:'Nuevo caso',open:'Abrir guardado',import:'Importar evidencia',overview:'Resumen',timeline:'Cronología',evidence:'Evidencia',traces:'Árbol de trazas',correlations:'Correlaciones',git:'Contexto Git',report:'Informe',cases:'Investigación',settings:'Configuración',empty:'Aún no hay evidencia importada',emptyInfo:'Seleccioná un archivo JSON, JSONL u OTLP JSON local. No se escanea ni envía nada automáticamente.',source:'Fuentes',events:'Observaciones',groups:'Grupos correlacionados',hypotheses:'Hipótesis',unverified:'Sin verificar',readGit:'Leer Git (opt-in)',save:'Guardar localmente',duplicate:'Duplicar',archive:'Archivar',delete:'Eliminar guardado',exportMarkdown:'Exportar Markdown',exportJson:'Exportar JSON',addNote:'Agregar nota',addHypothesis:'Agregar hipótesis',openSource:'Abrir origen',search:'Buscar evidencia',severity:'Severidad',service:'Servicio',all:'Todos',note:'Nota de investigación',claim:'Hipótesis falsable',noGit:'Git nunca se inspecciona sin un clic explícito y un workspace confiable.',noCausality:'Esta sección muestra relaciones, no una causa raíz confirmada.',missingTime:'Hora desconocida',settingsOpen:'Abrir configuración',noResult:'No hay observaciones coincidentes.',history:'Reabrir, duplicar, anotar o archivar un caso redactado. Guardar es opt-in y la extensión no cifra los datos.'}
 };
-let model = null, tab='overview', filter={text:'',severity:'ALL',service:'ALL'}, noteText='',claimText='';
+let model = null, tab='overview', filter={text:'',severity:'ALL',service:'ALL',trace:'',request:'',from:'',to:''}, timelinePage=0, noteText='',claimText='';
 const t = key => (labels[(model && model.language==='es')?'es':'en'][key] || key);
 const send = (type, more={}) => vscode.postMessage(Object.assign({type},more));
 function el(tag, className, text) { const e=document.createElement(tag); if(className)e.className=className;if(text!==undefined)e.textContent=String(text);return e; }
@@ -104,10 +104,49 @@ function empty(message,description){return append(el('div','empty'),el('strong',
 function kpi(n,label){return append(el('div','stat'),el('strong','',n),el('span','',label))}
 function ts(o){return o.timestamp||t('missingTime')}
 function valid(){return !!(model&&model.case)}
-function records(){if(!valid())return [];const list=model.case.observations||[];return list.filter(o=>(!filter.text||JSON.stringify([o.message,o.service,o.traceId,o.requestId]).toLowerCase().includes(filter.text.toLowerCase()))&&(filter.severity==='ALL'||o.severity===filter.severity)&&(filter.service==='ALL'||o.service===filter.service)).slice(0,10000).sort((a,b)=>(a.timestamp===null?1:b.timestamp===null?-1:(a.timestamp||'').localeCompare(b.timestamp||''))||a.provenance.ordinal-b.provenance.ordinal);}
-function filters(container){const bar=el('div','filters');const search=append(el('label','field'),el('span','small',t('search')));const input=el('input');input.type='search';input.value=filter.text;input.placeholder=t('search');input.addEventListener('input',()=>{filter.text=input.value;renderContent()});append(search,input);bar.append(search);
-for(const [field,key,values] of [['severity','severity',['ALL','TRACE','DEBUG','INFO','WARN','ERROR','FATAL','UNKNOWN']],['service','service',['ALL',...new Set((model.case.observations||[]).map(o=>o.service).filter(Boolean))]]]){const label=append(el('label','field'),el('span','small',t(key)));const select=el('select');for(const value of values){const option=el('option','',value==='ALL'?t('all'):value);option.value=value;select.append(option)}select.value=filter[field];select.addEventListener('change',()=>{filter[field]=select.value;renderContent()});append(label,select);bar.append(label)}
-container.append(bar)}
+function records(){
+  if(!valid())return [];
+  const list=model.case.observations||[];
+  return list.filter(o=>
+    (!filter.text||JSON.stringify([o.message,o.service,o.traceId,o.requestId]).toLowerCase().includes(filter.text.toLowerCase())) &&
+    (filter.severity==='ALL'||o.severity===filter.severity) &&
+    (filter.service==='ALL'||o.service===filter.service) &&
+    (!filter.trace||o.traceId===filter.trace.trim()) &&
+    (!filter.request||o.requestId===filter.request.trim()) &&
+    (!filter.from||(o.timestamp!==null&&o.timestamp.slice(0,10)>=filter.from)) &&
+    (!filter.to||(o.timestamp!==null&&o.timestamp.slice(0,10)<=filter.to))
+  ).slice(0,10000).sort((a,b)=>
+    (a.timestamp===null?1:b.timestamp===null?-1:(a.timestamp||'').localeCompare(b.timestamp||''))||
+    a.provenance.ordinal-b.provenance.ordinal);
+}
+function filters(container){
+  const bar=el('div','filters');
+  for(const [field,labelText,inputType] of [
+    ['text',t('search'),'search'],['trace','Trace ID (exact)','search'],
+    ['request','Request ID (exact)','search'],['from','UTC from','date'],['to','UTC to','date']
+  ]){
+    const label=append(el('label','field'),el('span','small',labelText));
+    const input=el('input');input.type=inputType;input.value=filter[field];input.placeholder=labelText;
+    input.dataset.filter=field;
+    input.addEventListener('input',()=>{
+      const offset=input.selectionStart;filter[field]=input.value;timelinePage=0;renderContent();
+      const next=$('content').querySelector('input[data-filter="'+field+'"]');
+      if(next){next.focus();if(offset!==null&&next.type==='search')next.setSelectionRange(offset,offset)}
+    });
+    append(label,input);bar.append(label);
+  }
+  for(const [field,key,values] of [
+    ['severity','severity',['ALL','TRACE','DEBUG','INFO','WARN','ERROR','FATAL','UNKNOWN']],
+    ['service','service',['ALL',...new Set((model.case.observations||[]).map(o=>o.service).filter(Boolean))]]
+  ]){
+    const label=append(el('label','field'),el('span','small',t(key)));
+    const select=el('select');select.dataset.filter=field;
+    for(const value of values){const option=el('option','',value==='ALL'?t('all'):value);option.value=value;select.append(option)}
+    select.value=filter[field];select.addEventListener('change',()=>{filter[field]=select.value;timelinePage=0;renderContent()});
+    append(label,select);bar.append(label);
+  }
+  container.append(bar);
+}
 function observationRow(o){const item=el('article','item');const top=el('div','item-head');const left=el('div');append(left,el('span','tag '+(o.severity==='ERROR'||o.severity==='FATAL'?'tag-error':''),o.severity),el('span','small mono','  '+ts(o)));const actions=el('div','inline-actions');
 const marked=(model.case.bookmarks||[]).includes(o.id);
 append(actions,button(marked?'★ Saved':'☆ Bookmark','bookmark',false,{observationId:o.id}),
@@ -118,7 +157,25 @@ const grid=el('div','grid');
 append(grid,card('Current case',model.case.title+' · '+model.case.id),card('Observed signals',model.case.observations.length+' imported records across '+model.case.sources.length+' selected source(s).'));
 root.append(grid);const recent=el('section','card');append(recent,el('h3','','Latest observations'));for(const o of records().slice(-5))recent.append(observationRow(o));root.append(recent);
 }
-function timeline(root){append(root,head(t('timeline'),'Sorted by available source timestamps; missing/ambiguous clocks are not fabricated.'));filters(root);const list=records();const area=el('div','card');if(!list.length)area.append(empty(t('noResult'),''));for(const o of list.slice(0,400))area.append(observationRow(o));if(list.length>400)area.append(paragraph('Showing 400 of '+list.length+' filtered observations.','small'));root.append(area)}
+function timeline(root){
+  append(root,head(t('timeline'),'Dates are UTC. Exact trace/request filters; missing timestamps are excluded only when a date range is chosen.'));
+  filters(root);
+  const list=records(), pageSize=100, pages=Math.max(1,Math.ceil(list.length/pageSize));
+  timelinePage=Math.min(timelinePage,pages-1);
+  const first=timelinePage*pageSize;
+  const area=el('div','card');
+  if(!list.length)area.append(empty(t('noResult'),''));
+  for(const o of list.slice(first,first+pageSize))area.append(observationRow(o));
+  root.append(area);
+  const pager=el('div','inline-actions');
+  const previous=button('← Previous','timelinePrevious');
+  const next=button('Next →','timelineNext');
+  previous.disabled=timelinePage===0||!!model.busy;
+  next.disabled=timelinePage>=pages-1||!!model.busy;
+  append(pager,paragraph((list.length?first+1:0)+'–'+Math.min(first+pageSize,list.length)+' of '+list.length+
+    ' · page '+(timelinePage+1)+'/'+pages,'small'),previous,next);
+  root.append(pager);
+}
 function evidence(root){append(root,head(t('evidence'),'Source fingerprints and original record provenance. Open source works only if the original file remains available in this session.'));if(!model.case.sources.length){root.append(empty(t('empty'),t('emptyInfo')));return}for(const s of model.case.sources){const area=el('div','card');append(area,el('h3','',s.name),paragraph('SHA-256 '+s.sha256,'mono small'),paragraph(s.format+' · '+s.byteLength+' bytes · '+s.importedAt,'small'));root.append(area)}for(const o of records().slice(0,100)){const a=observationRow(o);a.append(el('pre','',JSON.stringify(o.attributes,null,2)));root.append(a)}}
 function traces(root){
   append(root,head(t('traces'),'Exact trace/span/parent relationships. Orphans, cycles and ambiguous duplicated parents are labeled; no invented edges.'));
@@ -183,11 +240,12 @@ if(result&&result.entries){
   for(const entry of result.entries.slice(0,25))root.append(card(entry.title||entry.id,(entry.kind||'')+' · '+(entry.service||'unknown service')+' · '+(entry.timestamp||'time unknown')+' · '+entry.id));
 }
 }
-function renderContent(){const root=$('content');root.replaceChildren();if(!valid())return;({overview,timeline,evidence,traces,correlations,git,report,cases,settings}[tab]||overview)(root);}
+function renderContent(){const root=$('content');root.replaceChildren();root.setAttribute('aria-labelledby','tab-'+tab);if(!valid())return;({overview,timeline,evidence,traces,correlations,git,report,cases,settings}[tab]||overview)(root);}
 function render(){if(!valid())return;document.documentElement.lang=model.language==='es'?'es':'en';for(const b of document.querySelectorAll('[data-label]'))b.textContent=t(b.dataset.label);$('subtitle').textContent=model.language==='es'?'Cada incidente deja evidencia. Observar y correlacionar no demuestra causalidad.':'Every incident leaves evidence. Observation and correlation never prove a cause by themselves.';
 const s=$('status');s.replaceChildren(el('span','status-name',model.status),el('span','status-detail',model.details||'Ephemeral session; no automatic persistence.'));const stats=$('stats');stats.replaceChildren(kpi(model.case.sources.length,t('source')),kpi(model.case.observations.length,t('events')),kpi(model.case.correlations.length,t('groups')),kpi(model.case.hypotheses.filter(h=>h.state!=='CONFIRMED').length,t('unverified')));
-const nav=$('navigation');nav.replaceChildren();for(const id of sections){const b=el('button','',t(id));b.type='button';b.setAttribute('role','tab');b.setAttribute('aria-selected',String(tab===id));b.tabIndex=tab===id?0:-1;b.dataset.tab=id;nav.append(b)}renderContent()}
+const nav=$('navigation');nav.replaceChildren();for(const id of sections){const b=el('button','',t(id));b.type='button';b.setAttribute('role','tab');b.setAttribute('aria-selected',String(tab===id));b.tabIndex=tab===id?0:-1;b.dataset.tab=id;b.id='tab-'+id;b.setAttribute('aria-controls','content');nav.append(b)}renderContent()}
 document.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.dataset.tab){tab=button.dataset.tab;render();return}const action=button.dataset.action;if(!action)return;
+if(action==='timelinePrevious'||action==='timelineNext'){timelinePage=Math.max(0,timelinePage+(action==='timelineNext'?1:-1));renderContent();return}
 if(action==='note'){if(noteText.trim())send('note',{text:noteText});noteText='';return}
 if(action==='hypothesis'){if(claimText.trim().length>=10)send('hypothesis',{text:claimText});claimText='';return}
 if(action==='openSource'||action==='bookmark'){send(action,{observationId:button.dataset.observationId});return}
