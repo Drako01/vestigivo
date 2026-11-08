@@ -9,6 +9,7 @@ function secrets(): SecretMock {
     get: async key => values.get(key),
     store: async (key, value) => { values.set(key, value); },
     delete: async key => { values.delete(key); },
+    keys: async () => [...values.keys()],
     onDidChange: (()=>({dispose:()=>{}})) as SecretMock['onDidChange']
   };
 }
