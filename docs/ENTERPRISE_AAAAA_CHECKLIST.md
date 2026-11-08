@@ -6,7 +6,7 @@
 - Base al iniciar implementación: `main` @ `6a1ed6fb01a32f302f208330a22f03b9aa1fcd8c` (PR #1 y #2 ya fusionados).
 - Rama: `feat/enterprise-aaaaa-incident-intelligence-20261108`.
 - Único PR de implementación: [#3, DRAFT](https://github.com/Drako01/vestigivo/pull/3). **No fusionar ni publicar.**
-- SHA del código validado al elaborar este corte: `e08deb1f17d33e470fa78fb22931bce2feb7929e`; [CI PASS #42500482525](https://github.com/Drako01/vestigivo/actions/runs/42500482525).
+- SHA del código validado al elaborar este corte: `3adcb6d4e392ddf1d5a9080248852f7d3b61fded`; [CI SUCCESS #42500922853](https://github.com/Drako01/vestigivo/actions/runs/42500922853), con **Host macOS WARN** en paso no bloqueante.
 - `[x]` significa **implementado o comprobado expresamente en el texto**; no implica cierre de la fase. `[ ]` significa faltante o no acreditado.
 - Gates de validación adicionales y límites: [ACCEPTANCE_EVIDENCE.md](ACCEPTANCE_EVIDENCE.md).
 
@@ -83,7 +83,8 @@
 - [ ] Medición de UI real scroll/filter/render y presupuestos de frame/long task; benchmark core no acredita FPS de webview.
 - [x] Threat model STRIDE actualizado en [THREAT_MODEL.md](THREAT_MODEL.md); límites, mitigaciones y riesgos residuales documentados; validación de RCA persistido y pre-abort externo con tests.
 - [ ] Fuzz/property-based, mutation testing, revisión integral de PII/Markdown/XSS/Unicode/SSRF y revisión de seguridad independiente.
-- [ ] Matriz real Windows/Linux/macOS, WSL/SSH/Dev Containers; QA screen-reader, foco, contraste, alta carga, cancelaciones.
+- [x] Matriz nativa CI Windows/Linux/macOS: 45/45 tests, cobertura core, branding y empaquetado OK en los tres OS ([run #42500922853](https://github.com/Drako01/vestigivo/actions/runs/42500922853)). Host Linux/Windows ejecutó; host macOS **FAILED exit -2**, pero job marcó SUCCESS por `continue-on-error`, por lo que **Host macOS sigue WARN/BLOCKED**.
+- [ ] WSL/SSH/Dev Containers; QA screen-reader, foco, contraste, alta carga, cancelaciones; resolver Host macOS.
 - [ ] Auditoría de licencias y de dependencias de desarrollo (advisories moderate registrados como WARN, sin justificar cierre).
 
 ## Fase 6 — Release candidate y documentación — PARTIAL
@@ -102,7 +103,17 @@
 
 - **Fases aceptadas 100 %:** 0 de 7. Todas PARTIAL. No hay porcentaje global de funcionalidades rigurosamente medido.
 - **Gates sí aprobados:** 45 tests/0 fallos, cobertura de core superior a mínimos, benchmark real, Extension Host Linux (comandos, editor central, Activity Bar mediante comando, almacenamiento), audit runtime, PNG alpha, `npm ci`, compilación y VSIX candidato sobre SHA `e08deb1`.
-- **Gates específicos no aprobados:** clic físico en Activity Bar, VSIX instalado, E2E visual final/UX a11y, Webview FPS/scroll, Windows/macOS, live APIs, seguridad independiente, capturas reales y firma del propietario.
+- **Gates específicos no aprobados:** clic físico Activity Bar, VSIX instalado, E2E visual final/UX a11y, Webview FPS/scroll, **Host macOS falló con exit -2 pese a job verde**, WSL/SSH/containers, live APIs, seguridad independiente, capturas reales y firma del propietario.
 - **Estado del producto:** implementación funcional parcial, **NOT READY FOR MERGE / NOT READY FOR PUBLISH**.
 
 La nueva sesión debe recuperar este archivo, inspeccionar el HEAD del PR #3 y continuar implementando el DoD de las fases 0–6, no generar otra propuesta.
+
+## Checkpoint de continuidad — 2026-11-08 (matriz nativa)
+
+- **Código validado:** `3adcb6d4e392ddf1d5a9080248852f7d3b61fded`. [CI #42500922853](https://github.com/Drako01/vestigivo/actions/runs/42500922853) con tres jobs `success`.
+- **Linux:** 45/45 tests, Host real PASS, VSIX checksum `e55ec05c793ebe444586632b31e5d60e7b9adc8cfe6bc85f44da005e31d17048`.
+- **Windows:** 45/45 tests, paquete VSIX, Host step `success` (no acredita clic físico), checksum `fc7bc03d83e5dcb0da5018dc3ac38e1d96058d3f911888b33f8762b5cc6d4dd5`.
+- **macOS:** 45/45 tests y VSIX PASS, checksum `f9058d85702b0041c642bff63a589deb43e3d1066ca54820d0ab14fb0d575212`. Host `npm run test:host` **FAILED exit -2** en el log, pero `continue-on-error: true` dejó el job verde: **NO interpretar como E2E PASS**.
+- Los SHA distintos de VSIX entre plataformas muestran que los paquetes no son byte-for-byte idénticos. Reproducibilidad binaria multiplataforma aún no acreditada.
+- **Próximo bloque prioritario:** hacer inequívoco el estado Host macOS, agregar E2E sobre VSIX **instalado** con perfil aislado, no limitarse a Extension Development Host. Después, UX real y screen-reader.
+- **No hay capturas finales, ni publicación, ni merge.** `main` intacto; PR #3 sigue Draft. Se agregará una entrada de checkpoint al cerrar cada bloque posterior.
