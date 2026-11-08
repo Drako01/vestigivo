@@ -2,7 +2,7 @@
   "name": "vestigivo",
   "displayName": "Vestigivo RCA",
   "description": "Local-first Incident Intelligence & Root Cause Analysis with explicit evidence states.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "armotusitio",
   "license": "MIT",
   "private": true,
