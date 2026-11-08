@@ -155,3 +155,14 @@ La siguiente sesión debe comenzar por el último run del PR #3 y actualizar est
 - [ ] Activar política OIDC Marketplace usando workflow `publish.yml`. La captura reportó estado `Inactive / Never` y ventana hasta **2026-11-10 14:05 hora local**; para repo privado, Marketplace exige canje inicial dentro de 48h. Si vence, renovar/recrear cuando se apruebe release.
 - [ ] Confirmar `npm ci`, `npm run check`, empaquetado 0.1.1, matrix y SHA exacto en CI **del HEAD nuevo**; capturar run de evidencia.
 - [ ] Aprobar merge y publicación únicamente después de DoD, policy/environments y QA del propietario. **Este checkpoint no autoriza merge ni release.**
+
+### Checkpoint — macOS Extension Host RCA y fix del runner (2026-11-08)
+
+- [x] Se recuperó el log real de macOS del CI: `spawn .../Visual Studio Code.app/Contents/MacOS/Electron ENOENT`, `exit -2`. El error coincide con issue upstream [microsoft/vscode-test#349](https://github.com/microsoft/vscode-test/issues/349): macOS ahora utiliza el binario `Code`, no `Electron`.
+- [x] `@vscode/test-electron` actualizado de 2.5.2 a **3.1.0** en `package.json` y lockfile con integridad oficial: corrige resolución de `CFBundleExecutable`, requiere Node >=22 (CI ya usa 22).
+- [x] Quitado `continue-on-error: true` del smoke nativo macOS/Windows: en CI ya **no se puede disimular el ENOENT como un job verde**. El release guard exige el nuevo step de Host bloqueante.
+- [ ] **CI final de esta corrección aún pendiente** sobre código SHA `64b88704c365f6808a994f3b4d07435199d68b13` al actualizar este checkpoint. [Workflow en progreso](https://github.com/Drako01/vestigivo/actions/runs/42504387643). No declarar macOS PASS hasta verificar resultado real.
+- [ ] Screenshots auténticas del Control Center instalado y accesibilidad visual siguen sin evidencia; el README no muestra imágenes simuladas. Se requieren capturas desde una sesión gráfica verificable y hosting público de assets para que sean visibles en Marketplace, dado que el repositorio es privado.
+- [ ] El workflow de publicación `publish.yml` se agregó **solo en la rama Draft**; OIDC Marketplace y fallback temporal Open VSX PAT se activarán únicamente tras aprobar el merge, con los entornos protegidos y el token configurados por el propietario.
+
+**Fases 0–6: no declaradas completas ni listas para publicación.** Próxima sesión: confirmar el run exacto, actualizar evidencia SHA/PASS/FAIL y continuar las capacidades pendientes del prompt maestro.
