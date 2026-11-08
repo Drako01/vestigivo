@@ -69,3 +69,11 @@ Para E2E de desarrollo Linux se requiere escritorio o `xvfb-run -a npm run test:
 
 
 Checkpoint empaquetado [CI #42501342938](https://github.com/Drako01/vestigivo/actions/runs/42501342938): `PACKAGED VSIX INSTALL PASS` y `PACKAGED VSIX HOST PASS` en Linux. El test ejecuta el directorio instalado vía devPath; **no equivale a prueba de UI física ni activación automática**. Mac Host registra `ENOENT` pese a job verde. Documento sincronizado con el [checklist](ENTERPRISE_AAAAA_CHECKLIST.md).
+
+## Evidencia adicional — screenshots reales de VS Code (2026-11-08)
+
+- **Origen:** job `Capture authentic VS Code screenshots (synthetic fixture)` de [GitHub Actions #42507835267](https://github.com/Drako01/vestigivo/actions/runs/42507835267), PASS.
+- **Proceso:** instalación de herramientas de captura en runner efímero; compilación desde rama PR; ejecución real de VS Code Electron bajo Xvfb `1440x900x24`; webview original `media/control-center.html` y datos importados mediante `parseEvidence`/ `importIntoCase`.
+- **Evidencia persistida:** `media/screenshots/01-overview.png`, `02-timeline.png`, `03-trace-tree.png`, `04-case-studio.png`. PNG válidos, 1440 × 900, contenido distinto; incorporados al repositorio y enlazados en README principal/español.
+- **Privacidad:** fixture `test/fixtures/visual-demo.jsonl` sintético, `demo.synthetic=true` en todas las filas, hipótesis falsable y plan manual, nunca logs reales. La UI identifica la demostración.
+- **Gate reproducible:** `npm run screenshots:verify`, ejecutado antes del packaging en PR CI. No son mockups ni prueba de interacción con mouse físico, screen reader o rendimiento de paint.
