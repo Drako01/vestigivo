@@ -28,7 +28,7 @@ jobs:
       - name: Audit runtime dependencies
         run: npm audit --omit=dev --audit-level=high
       - name: Package a private VSIX candidate
-        run: npm run package:vsix
+        run: npx vsce package --no-dependencies
       - name: Record checksum and inventory
         shell: bash
         run: |
