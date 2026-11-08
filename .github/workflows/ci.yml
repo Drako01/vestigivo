@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   verify:
-    name: TypeScript, core tests, scoped E2E and private VSIX
+    name: Verify (ubuntu-latest)
     runs-on: ubuntu-latest
     timeout-minutes: 18
     steps:
@@ -96,7 +96,7 @@ jobs:
           retention-days: 7
 
   compatibility:
-    name: Native OS validation (${{ matrix.os }})
+    name: Verify (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:
