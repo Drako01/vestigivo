@@ -1,4 +1,4 @@
-<p align="center"><img src="media/brand/vestigivo-lockup-dark.svg" alt="Vestigivo RCA — Incident Intelligence & Root Cause Analysis" width="780"></p>
+# Vestigivo RCA — Incident Intelligence & Root Cause Analysis
 
 # Vestigivo RCA
 
@@ -12,7 +12,7 @@ RCA significa **Root Cause Analysis**, pero el nombre **no implica que un análi
 
 ## Brand System
 
-![Moodboard Dark Forensic Premium](media/brand/moodboard.svg)
+[Moodboard Dark Forensic Premium (SVG)](media/brand/moodboard.svg)
 
 - [Manual de marca](docs/BRAND_IDENTITY.md)
 - [Logotipo oscuro](media/brand/vestigivo-lockup-dark.svg) · [logotipo claro](media/brand/vestigivo-lockup-light.svg)
