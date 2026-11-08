@@ -18,6 +18,26 @@ Vestigivo RCA permite investigar incidentes dentro de Visual Studio Code, correl
 | Contexto Git | Lectura explícita y acotada del historial, únicamente en espacios confiables |
 | Sentry / Grafana | Integraciones opcionales de lectura, con autorización y credenciales en SecretStorage |
 
+## Capturas reales de la extensión
+
+Las siguientes imágenes muestran **Vestigivo RCA funcionando dentro del VS Code Extension Development Host**, capturadas con Electron y Xvfb. Los datos proceden exclusivamente de un fixture de **demostración sintético** (`test/fixtures/visual-demo.jsonl`); no son registros de incidentes reales.
+
+**Control Center — vista general**
+
+![Vestigivo RCA Control Center real dentro de VS Code, usando un incidente sintético](../media/screenshots/01-overview.png)
+
+**Timeline — filtros y observaciones con procedencia**
+
+![Cronología de Vestigivo RCA dentro de VS Code, con filtros de servicio y severidad](../media/screenshots/02-timeline.png)
+
+**Trace Tree — relaciones de traza explícitas**
+
+![Árbol de trazas en Vestigivo RCA mostrando spans del fixture sintético](../media/screenshots/03-trace-tree.png)
+
+**Case Studio — hipótesis y plan de verificación manual**
+
+![Investigación de Vestigivo RCA con hipótesis y plan de verificación](../media/screenshots/04-case-studio.png)
+
 ## Primeros pasos
 
 1. Hacé clic en **Vestigivo RCA** en la Activity Bar. El **Control Center** se abre en una pestaña central.
