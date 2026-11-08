@@ -83,3 +83,14 @@ test('Provider response max-size applies even when server lacks content-length',
   await client.connect('sentry','valid-token-123',{endpoint:'https://sentry.io',organization:'org'});
   await assert.rejects(client.list('sentry'),/budget/);
 });
+
+test('Already cancelled provider request never transmits authorization header or opens network', async () => {
+  let transmitted = 0;
+  const transport = (async () => { transmitted++; return new Response('[]'); }) as typeof fetch;
+  const client = new ProviderClient(secrets(), transport);
+  await client.connect('sentry', 'valid-token-123', { endpoint: 'https://sentry.io', organization: 'org' });
+  const controller = new AbortController();
+  controller.abort();
+  await assert.rejects(client.list('sentry', '', controller.signal), /cancelled before transmission/);
+  assert.equal(transmitted, 0);
+});
