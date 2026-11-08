@@ -52,6 +52,7 @@ export function redactIncident<T extends import('./types').IncidentCase>(inciden
       observationIds: correlation.observationIds.map(redactText) })),
     hypotheses: incident.hypotheses.map(hypothesis => redactValue(hypothesis) as typeof hypothesis),
     notes: incident.notes.map(note => redactValue(note) as typeof note),
+    ...(incident.bookmarks ? { bookmarks: [...incident.bookmarks] } : {}),
     audit: incident.audit.map(entry => redactValue(entry) as typeof entry),
     limitations: incident.limitations.map(redactText)
   } as T;

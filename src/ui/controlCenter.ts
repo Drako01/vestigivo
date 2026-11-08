@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { randomBytes } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { createCase, importIntoCase, addNote, duplicateCase } from '../core/case';
+import { createCase, importIntoCase, addNote, duplicateCase, compareCases, renameCase, toggleBookmark, type Comparison } from '../core/case';
 import { parseEvidence, EvidenceFormatError } from '../core/parser';
 import { exportMarkdown, exportJson } from '../core/report';
 import { traceTree } from '../core/correlate';
@@ -15,14 +15,14 @@ import { ProviderClient, type ProviderName, type ProviderResult } from '../adapt
 
 type UiMessage = { type: 'import' | 'exportMarkdown' | 'exportJson' | 'save' | 'open' | 'new' |
   'duplicate' | 'archive' | 'delete' | 'git' | 'settings' | 'refresh' |
-  'note' | 'hypothesis' | 'openSource' | 'providerConnect' | 'providerDisconnect' | 'providerFetch';
+  'note' | 'hypothesis' | 'openSource' | 'rename' | 'bookmark' | 'compare' | 'providerConnect' | 'providerDisconnect' | 'providerFetch';
   text?: string; observationId?: string; provider?: ProviderName };
 function validMessage(value: unknown): value is UiMessage {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const item = value as Record<string, unknown>;
   return typeof item.type === 'string' &&
     ['import', 'exportMarkdown', 'exportJson', 'save', 'open', 'new', 'duplicate', 'archive', 'delete', 'git',
-      'settings', 'refresh', 'note', 'hypothesis', 'openSource',
+      'settings', 'refresh', 'note', 'hypothesis', 'openSource', 'rename', 'bookmark', 'compare',
       'providerConnect','providerDisconnect','providerFetch'].includes(item.type) &&
     (item.text === undefined || typeof item.text === 'string' && item.text.length <= 2000) &&
     (item.provider === undefined || item.provider === 'sentry' || item.provider === 'grafana') &&
@@ -40,6 +40,7 @@ export class ControlCenter implements vscode.Disposable {
   private readonly providers: ProviderClient;
   private connections: Record<ProviderName, boolean> = { sentry: false, grafana: false };
   private providerResult: ProviderResult | null = null;
+  private comparison: { title: string; data: Comparison } | null = null;
   constructor(private readonly context: vscode.ExtensionContext) {
     this.store = new CaseStore(vscode.Uri.joinPath(context.globalStorageUri, 'cases'));
     this.providers = new ProviderClient(context.secrets);
@@ -67,6 +68,7 @@ export class ControlCenter implements vscode.Disposable {
         correlations: this.incident.correlations.slice(0, 15) }),
       previewOmitted: Math.max(0, this.incident.observations.length - 75),
       providers: this.connections, providerResult: this.providerResult,
+      comparison: this.comparison,
       traceNodes: traceTree(this.incident.observations.slice(0, 400)),
       traceCount: this.incident.observations.filter(o => o.spanId && o.traceId).length,
       language: vscode.workspace.getConfiguration('vestigivo').get<string>('language', 'auto') === 'auto'
@@ -85,7 +87,7 @@ export class ControlCenter implements vscode.Disposable {
         case 'exportJson': await this.exportReport('json'); break;
         case 'save': await this.save(); break;
         case 'open': await this.openStored(); break;
-        case 'new': this.incident = createCase(); this.git = null; this.sourceUris.clear(); this.status = 'EMPTY'; this.details = ''; break;
+        case 'new': this.incident = createCase(); this.comparison = null; this.git = null; this.sourceUris.clear(); this.status = 'EMPTY'; this.details = ''; break;
         case 'duplicate': this.incident = duplicateCase(this.incident); this.status = 'COMPLETE'; break;
         case 'archive': this.incident = { ...this.incident, archived: true }; this.details = 'Archived in the current session; save explicitly to persist.'; break;
         case 'delete': await this.deleteStored(); break;
@@ -94,6 +96,9 @@ export class ControlCenter implements vscode.Disposable {
         case 'hypothesis': this.incident = { ...this.incident,
           hypotheses: [...this.incident.hypotheses, proposeHypothesis(redactText(value.text ?? ''))] }; break;
         case 'openSource': await this.openSource(value.observationId); break;
+        case 'bookmark': if (value.observationId) this.incident = toggleBookmark(this.incident, value.observationId); break;
+        case 'rename': await this.rename(); break;
+        case 'compare': await this.compareStored(); break;
         case 'settings': await vscode.commands.executeCommand('workbench.action.openSettings', 'vestigivo'); break;
         case 'providerConnect': if (value.provider) await this.connectProvider(value.provider); break;
         case 'providerDisconnect': if (value.provider) await this.disconnectProvider(value.provider); break;
@@ -212,6 +217,24 @@ export class ControlCenter implements vscode.Disposable {
     await this.store.save(this.incident);
     this.details = 'Investigation saved locally on explicit request.';
   }
+  private async rename(): Promise<void> {
+    const title = await vscode.window.showInputBox({ title: 'Rename incident case',
+      value: this.incident.title, prompt: 'Title is stored only when you explicitly save the case.',
+      validateInput: value => value.trim().length < 3 ? 'At least 3 characters are required.' : undefined });
+    if (title === undefined) { this.status = 'CANCELLED'; return; }
+    this.incident = renameCase(this.incident, title);
+  }
+  private async compareStored(): Promise<void> {
+    const saved = await this.store.list();
+    if (!saved.length) { this.details = 'No baseline saved. Save one case explicitly before comparing.'; return; }
+    const selected = await vscode.window.showQuickPick(saved.map(x => ({
+      label: x.title, description: x.updatedAt, id: x.id
+    })), { title: 'Choose a saved baseline to compare against the current case' });
+    if (!selected) { this.status = 'CANCELLED'; return; }
+    const baseline = await this.store.read(selected.id);
+    this.comparison = { title: selected.label, data: compareCases(baseline, this.incident) };
+    this.details = 'Exact evidence IDs compared. Absence is not proof that an incident was fixed.';
+  }
   private async openStored(): Promise<void> {
     const items = await this.store.list();
     if (!items.length) { this.details = 'No saved cases in local extension storage.'; return; }
@@ -221,6 +244,7 @@ export class ControlCenter implements vscode.Disposable {
     })), { title: 'Open previously saved redacted investigation' });
     if (!selected) return;
     this.incident = await this.store.read(selected.caseId);
+    this.comparison = null;
     this.sourceUris.clear();
     this.git = null;
     this.status = 'COMPLETE'; this.details = 'Loaded saved redacted case. Original file links require re-import.';

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { parseEvidence, EvidenceFormatError } from '../src/core/parser';
 import { correlate, timeline, traceTree } from '../src/core/correlate';
 import { redactIncident, redactText, redactValue } from '../src/core/redact';
-import { createCase, importIntoCase, addNote, duplicateCase, loadCase } from '../src/core/case';
+import { createCase, importIntoCase, addNote, duplicateCase, loadCase, toggleBookmark, renameCase, compareCases } from '../src/core/case';
 import { evaluateVerification, proposeHypothesis } from '../src/core/verification';
 import { exportJson, exportMarkdown } from '../src/core/report';
 const data = (text: string): Uint8Array => new TextEncoder().encode(text);
@@ -161,4 +161,20 @@ test('Trace tree labels cyclic and duplicated parent IDs rather than inventing a
     {message:'child',traceId:'trace1',spanId:'c',parentSpanId:'p'}
   ]),'duplicates.json');
   assert.equal(traceTree(ambiguous.observations).find(n=>n.observation.spanId==='c')?.ambiguousParent,true);
+});
+
+test('Case bookmarks, rename and baseline comparison are auditable and never claim resolution', () => {
+  const baseline = importIntoCase(createCase(),parseEvidence(data('{"message":"old failure"}'),'original.json'));
+  const id = baseline.observations[0]!.id;
+  const bookmarked = toggleBookmark(baseline,id);
+  assert.deepEqual(bookmarked.bookmarks,[id]);
+  assert.equal(toggleBookmark(bookmarked,id).bookmarks?.length,0);
+  assert.throws(()=>toggleBookmark(baseline,'000000000000000000000000'),/not in this case/);
+  assert.throws(()=>renameCase(baseline,'a'),/at least 3/);
+  assert.equal(renameCase(baseline,'New incident title').title,'New incident title');
+  const restored = loadCase(JSON.parse(JSON.stringify(bookmarked)) as unknown);
+  assert.deepEqual(restored.bookmarks,[id]);
+  const comparison = compareCases(baseline,createCase('Independent observation set'));
+  assert.equal(comparison.absent.length,1);
+  assert.match(comparison.note,/not proof/);
 });

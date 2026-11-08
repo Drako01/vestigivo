@@ -7,7 +7,7 @@ export function createCase(title = 'Untitled investigation', now = new Date().to
   return {
     schemaVersion: SCHEMA_VERSION, id: randomUUID(), title: redactText(title).slice(0, 180), createdAt: now,
     updatedAt: now, archived: false, sources: [], observations: [], correlations: [],
-    hypotheses: [], notes: [], audit: [{ at: now, action: 'case-created', detail: 'New ephemeral case.' }],
+    hypotheses: [], notes: [], bookmarks: [], audit: [{ at: now, action: 'case-created', detail: 'New ephemeral case.' }],
     limitations: ['Correlation does not imply causality.', 'Secrets and personal information are redacted on a best-effort basis.']
   };
 }
@@ -59,6 +59,10 @@ export function loadCase(input: unknown): IncidentCase {
       !Array.isArray(limitations) || limitations.length > 100 ||
       !limitations.every(v => validText(v, 2000))) throw new Error('Case exceeds safety budgets or contains invalid collections.');
   const notes = Array.isArray(record.notes) ? record.notes : (version === 0 ? [] : null);
+  const bookmarks = record.bookmarks === undefined ? [] : record.bookmarks;
+  if (!Array.isArray(bookmarks) || bookmarks.length > 200 ||
+      !bookmarks.every(v => typeof v === 'string' && /^[a-f0-9]{24}$/.test(v)))
+    throw new Error('Invalid bookmarks.');
   if (!notes || notes.length > 200) throw new Error('Invalid investigator notes.');
   if (version === 1 && typeof record.archived !== 'boolean') throw new Error('Invalid archived flag.');
   for (const value of sources) {
@@ -108,7 +112,7 @@ export function loadCase(input: unknown): IncidentCase {
     ...record,
     schemaVersion: SCHEMA_VERSION,
     archived: version === 0 ? (record.archived === true) : record.archived,
-    notes,
+    notes, bookmarks,
     observations: observations.map(o => ({ ...(o as Record<string, unknown>), schemaVersion: SCHEMA_VERSION })),
     correlations: []
   } as unknown as IncidentCase;
@@ -122,4 +126,23 @@ export function compareCases(baseline: IncidentCase, current: IncidentCase): Com
   return { persistent: [...a].filter(id => b.has(id)), added: [...b].filter(id => !a.has(id)),
     absent: [...a].filter(id => !b.has(id)),
     note: 'Absence in selected evidence is not proof that a defect was resolved.' };
+}
+
+export function renameCase(existing: IncidentCase, title: string, now = new Date().toISOString()): IncidentCase {
+  const cleaned = redactText(title.trim()).slice(0, 180);
+  if (cleaned.length < 3) throw new Error('Case title must contain at least 3 characters.');
+  return { ...existing, title: cleaned, updatedAt: now,
+    audit: [...existing.audit, { at: now, action: 'case-renamed', detail: cleaned }].slice(-500) };
+}
+export function toggleBookmark(existing: IncidentCase, observationId: string, now = new Date().toISOString()): IncidentCase {
+  if (!existing.observations.some(o => o.id === observationId))
+    throw new Error('Cannot bookmark evidence that is not in this case.');
+  const selected = new Set(existing.bookmarks ?? []);
+  const remove = selected.has(observationId);
+  if (remove) selected.delete(observationId);
+  else selected.add(observationId);
+  if (selected.size > 200) throw new Error('Maximum of 200 bookmarks per investigation.');
+  return { ...existing, bookmarks: [...selected], updatedAt: now,
+    audit: [...existing.audit, {at: now, action: remove ? 'bookmark-removed' : 'bookmark-added',
+      detail: observationId}].slice(-500) };
 }

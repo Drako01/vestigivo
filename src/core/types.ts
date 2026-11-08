@@ -98,6 +98,7 @@ export interface IncidentCase {
   correlations: Correlation[];
   hypotheses: Hypothesis[];
   notes: InvestigatorNote[];
+  bookmarks?: string[];
   audit: CaseAuditEntry[];
   limitations: string[];
 }
