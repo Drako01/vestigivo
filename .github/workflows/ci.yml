@@ -25,6 +25,22 @@ jobs:
         run: npm install --ignore-scripts --no-fund
       - name: Compile once and test
         run: npm run check
+      - name: Decide whether the native Extension Host needs another smoke
+        id: host-scope
+        shell: bash
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [[ -z "$HEAD_SHA" ]]; then echo "run=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          git fetch origin "$HEAD_SHA" --depth=2
+          if git diff --name-only "$HEAD_SHA^" "$HEAD_SHA" | grep -E '^(src/extension\.ts|src/ui/|media/control-center\.html|test/host/)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Real VS Code Extension Host smoke (Linux, UI-relevant changes only)
+        if: steps.host-scope.outputs.run == 'true'
+        run: xvfb-run -a npm run test:host
       - name: Audit runtime dependencies
         run: npm audit --omit=dev --audit-level=high
       - name: Verify PNG dimensions, transparency and Activity Bar SVG

@@ -92,13 +92,15 @@
     "package:vsix": "npm run build && vsce package --no-dependencies",
     "check": "npm run build && node --experimental-test-coverage --test-coverage-include=dist/src/core/*.js --test-coverage-lines=85 --test-coverage-branches=80 --test dist/test/*.test.js",
     "brand:verify": "node scripts/verify-brand.cjs",
-    "test:coverage": "npm run check"
+    "test:coverage": "npm run check",
+    "test:host": "node dist/test/host/run.js"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/vscode": "^1.96.0",
     "@vscode/vsce": "^3.2.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "@vscode/test-electron": "^2.5.2"
   },
   "repository": {
     "type": "git",
