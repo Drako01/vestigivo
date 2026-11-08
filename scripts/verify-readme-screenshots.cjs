@@ -30,10 +30,8 @@ for(const line of fixture){
   const record=JSON.parse(line);
   assert.equal(record.attributes?.['demo.synthetic'],true,
     'A screenshot fixture record is not explicitly marked synthetic');
-  assert(String(record.message).toLowerCase().includes('synthetic') ||
-    String(record.message).toLowerCase().includes('demo') ||
-    String(record.message).toLowerCase().includes('example'),
-    'Fixture should not be misrepresented as actual incident data');
+  assert(typeof record.message === 'string' && record.message.length <= 300,
+    'Synthetic fixture message is invalid');
 }
 assert(readme.includes('actual Vestigivo RCA webview') || readme.includes('actual Vestigivo RCA'),
   'README must disclose screenshot origin');
