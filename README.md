@@ -31,7 +31,7 @@ Incidents often involve several services, timestamps with differing precision, i
 
 Vestigivo turns selected evidence into a **traceable, bounded investigation**. It records where each observation came from and explicitly marks missing or ambiguous information. It never performs automatic remediation, uploads local logs or claims that correlation proves causation.
 
-## Current capabilities (0.1.1 candidate)
+## Current capabilities (0.1.2)
 
 | Area | What it does |
 | --- | --- |
@@ -121,7 +121,7 @@ npm run package:vsix       # vestigivo-<version>.vsix
 
 For a genuine Extension Development Host on a graphical environment, build first and run `npm run test:host`. On Linux CI, `xvfb-run -a npm run test:vsix-host` tests the installed VSIX bytes in an isolated profile.
 
-**Release policy:** `0.1.0` is the manual bootstrap release; `0.1.1` is the next candidate. Pull requests execute validation; only an approved, version-bumping merge into `main` may initiate automated publishing. The repository visibility is controlled separately by the owner; publishing does not change it. See [Release Readiness](docs/RELEASE_READINESS.md), [Release Setup](docs/RELEASE_SETUP.md), [Master Specification](docs/VESTIGIVO_RCA_PROMPT_MAESTRO_ENTERPRISE_AAAAA.md) and [Technical Checklist](docs/ENTERPRISE_AAAAA_CHECKLIST.md).
+**Release policy:** `0.1.0` was bootstrapped manually and `0.1.1` was published via Trusted Publishing. `0.1.2` is the next candidate, adding a GitHub Release alongside Marketplace and Open VSX. Pull requests execute validation; only an approved, version-bumping merge into `main` may initiate automated publishing. The repository visibility is controlled separately by the owner; publishing does not change it. See [GitHub Releases](https://github.com/Drako01/vestigivo/releases), [Release Readiness](docs/RELEASE_READINESS.md), [Release Setup](docs/RELEASE_SETUP.md), [Master Specification](docs/VESTIGIVO_RCA_PROMPT_MAESTRO_ENTERPRISE_AAAAA.md) and [Technical Checklist](docs/ENTERPRISE_AAAAA_CHECKLIST.md).
 
 ### Language
 
