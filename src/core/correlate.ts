@@ -1,0 +1,51 @@
+import { createHash } from 'node:crypto';
+import type { Correlation, Observation } from './types';
+const fingerprint = (value: string): string => createHash('sha256').update(value).digest('hex').slice(0, 24);
+/** Exact identifiers only; never infer a causal relationship from proximity. */
+export function correlate(observations: readonly Observation[]): Correlation[] {
+  const groups = new Map<string, Set<string>>();
+  for (const o of observations) {
+    if (o.traceId) add(groups, 'trace:' + o.traceId, o.id);
+    if (o.requestId) add(groups, 'request:' + o.requestId, o.id);
+  }
+  const results: Correlation[] = [];
+  for (const [tag, memberIds] of groups) {
+    if (memberIds.size < 2) continue;
+    const isTrace = tag.startsWith('trace:');
+    const key = tag.slice(isTrace ? 6 : 8);
+    const observationIds = [...memberIds].sort();
+    results.push({
+      id: fingerprint(tag + ':' + observationIds.join('|')),
+      state: 'CORRELATED',
+      method: isTrace ? 'exact-trace-id' : 'exact-request-id',
+      key,
+      observationIds,
+      explanation: isTrace
+        ? 'Shared traceId exactly; indicates related trace context, not a proven cause.'
+        : 'Shared requestId exactly; indicates related request context, not a proven cause.'
+    });
+  }
+  return results.sort((a, b) => a.method.localeCompare(b.method) || a.key.localeCompare(b.key));
+}
+function add(groups: Map<string, Set<string>>, key: string, id: string): void {
+  if (!groups.has(key)) groups.set(key, new Set());
+  groups.get(key)?.add(id);
+}
+export function timeline(observations: readonly Observation[]): Observation[] {
+  return [...observations].sort((a, b) => {
+    if (!a.timestamp && b.timestamp) return 1;
+    if (a.timestamp && !b.timestamp) return -1;
+    const ordered = (a.timestamp ?? '').localeCompare(b.timestamp ?? '');
+    return ordered || a.provenance.sourceId.localeCompare(b.provenance.sourceId) ||
+      a.provenance.ordinal - b.provenance.ordinal || a.id.localeCompare(b.id);
+  });
+}
+export interface TraceNode { observation: Observation; parentId: string | null; missingParent: boolean; }
+export function traceTree(observations: readonly Observation[]): TraceNode[] {
+  const known = new Set(observations.filter(o => o.traceId && o.spanId).map(o => o.traceId + ':' + o.spanId));
+  return timeline(observations).filter(o => o.spanId).map(o => ({
+    observation: o,
+    parentId: o.parentSpanId ?? null,
+    missingParent: !!(o.parentSpanId && !known.has((o.traceId ?? '') + ':' + o.parentSpanId))
+  }));
+}
