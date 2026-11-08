@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
-import { randomUUID } from 'node:crypto';
 import { loadCase } from '../core/case';
-import { redactValue } from '../core/redact';
+import { redactIncident } from '../core/redact';
 import type { IncidentCase } from '../core/types';
 const MAX_CASE_BYTES = 8 * 1024 * 1024;
 const MAX_CASES = 20;
@@ -39,7 +38,7 @@ export class CaseStore {
     if (!CASE_ID.test(incident.id)) throw new Error('Invalid case identifier.');
     const all = await this.list();
     if (!all.some(c => c.id === incident.id) && all.length >= MAX_CASES) throw new Error('Case count limit (20) reached; delete an old case first.');
-    const safe = redactValue(incident);
+    const safe = redactIncident(incident);
     const bytes = new TextEncoder().encode(JSON.stringify(safe));
     if (bytes.byteLength > MAX_CASE_BYTES) throw new Error('Case exceeds the 8 MiB persistence budget.');
     await vscode.workspace.fs.createDirectory(this.root);
@@ -52,7 +51,7 @@ export class CaseStore {
     const uri = await vscode.window.showSaveDialog({ saveLabel: 'Export redacted case',
       defaultUri: vscode.Uri.file('vestigivo-' + incident.id + '.json'), filters: { JSON: ['json'] } });
     if (!uri) return null;
-    await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(JSON.stringify(redactValue(incident), null, 2)));
+    await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(JSON.stringify(redactIncident(incident), null, 2)));
     return uri;
   }
 }

@@ -1,10 +1,10 @@
 import type { IncidentCase } from './types';
-import { redactText, redactValue } from './redact';
+import { redactText, redactIncident } from './redact';
 import { timeline } from './correlate';
 const md = (value: unknown): string => redactText(String(value ?? '')).replace(/[\\`*_{}\[\]()#+!|>]/g, '\\$&').replace(/\r?\n/g, ' ');
 /** Deterministic, redacted export of existing case facts; no invented RCA claim. */
 export function exportMarkdown(input: IncidentCase): string {
-  const c = redactValue(input) as IncidentCase;
+  const c = redactIncident(input);
   const lines: string[] = [
     '# Vestigivo RCA — ' + md(c.title), '',
     'Case: ' + md(c.id), 'Schema: ' + c.schemaVersion, 'Created: ' + md(c.createdAt), '',
@@ -29,5 +29,5 @@ export function exportMarkdown(input: IncidentCase): string {
 export function exportJson(input: IncidentCase): string {
   return JSON.stringify({ exportSchemaVersion: 1, application: 'Vestigivo RCA',
     warning: 'No automatic causal attribution. Best-effort redaction.',
-    case: redactValue(input) }, null, 2) + '\n';
+    case: redactIncident(input) }, null, 2) + '\n';
 }
