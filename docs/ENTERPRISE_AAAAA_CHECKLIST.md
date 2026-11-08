@@ -179,3 +179,5 @@ La siguiente sesión debe comenzar por el último run del PR #3 y actualizar est
 - [ ] Continúan sin permiso merge y publicación de `0.1.1` hasta cumplir DoD; PR #3 permanece Draft.
 
 **Nota de continuidad:** el bloque anterior que describe PAT de Open VSX es histórico y quedó **reemplazado por este checkpoint**.
+
+- [x] Corrección adicional del release guard: `main` todavía no contiene `package.json`. El primer merge con código puede publicar únicamente **0.1.1**, con 0.1.0 manual documentada en changelog y la misma verificación SHA/CI del PR. A partir de ahí exige incremento SemVer normal. Commit `f3316deab73f2401527c440f4f577aef3772ce87`.
