@@ -1,9 +1,31 @@
-# Vestigivo
+<p align="center"><img src="media/brand/vestigivo-lockup-dark.svg" alt="Vestigivo RCA — Incident Intelligence & Root Cause Analysis" width="780"></p>
 
-> **Incident Intelligence** — Every incident leaves evidence.
+# Vestigivo RCA
 
-Vestigivo es una futura extensión de Visual Studio Code para investigar incidentes a partir de evidencias técnicas, sin confundir correlación con causalidad.
+**Incident Intelligence & Root Cause Analysis** · *Every incident leaves evidence.*
 
-**Estado:** desarrollo privado / sin release. La identidad de marca, especificaciones y prototipo se trabajan mediante pull requests. No publicar ni fusionar sin aprobación.
+> **Estado: desarrollo privado, no publicado.** El proyecto está en fase de diseño e implementación. No se ha certificado ningún diagnóstico automático ni se han realizado pruebas de aceptación de producción.
 
-Desarrollado por Alejandro Di Stefano — [ArmoTuSitio](https://armotusitio.com.ar). Licencia prevista: MIT.
+Vestigivo RCA será una extensión de VS Code **local-first** que ayuda a investigar incidentes y regresiones mediante trazas, logs y contexto de cambios, separando hechos observados, correlaciones, hipótesis y resultados verificados.
+
+RCA significa **Root Cause Analysis**, pero el nombre **no implica que un análisis automático pueda probar por sí solo una causa raíz**. La atribución causal requiere evidencia y reproducción comparables.
+
+## Brand System
+
+![Moodboard Dark Forensic Premium](media/brand/moodboard.svg)
+
+- [Manual de marca](docs/BRAND_IDENTITY.md)
+- [Logotipo oscuro](media/brand/vestigivo-lockup-dark.svg) · [logotipo claro](media/brand/vestigivo-lockup-light.svg)
+- [Isotipo](media/brand/vestigivo-symbol.svg) · [Activity Bar monocromático](media/brand/vestigivo-activity-bar.svg)
+- [Tokens de diseño](media/brand/tokens.css)
+
+## Producto y arquitectura
+
+- [Visión del producto](docs/PRODUCT_VISION.md)
+- [Arquitectura MVP](docs/ARCHITECTURE.md)
+- [Buenas prácticas](docs/ENGINEERING_STANDARDS.md)
+- [Modelo de amenazas](docs/THREAT_MODEL.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Checklist vivo](docs/IMPLEMENTATION_CHECKLIST.md)
+
+**Desarrollado por Alejandro Daniel Di Stefano — [ArmoTuSitio](https://armotusitio.com.ar)** · Licencia MIT. El repositorio permanece privado hasta autorización explícita de lanzamiento.

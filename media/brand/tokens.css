@@ -1,0 +1,15 @@
+/* Vestigivo RCA / Dark Forensic Premium — reference tokens.
+   VS Code UI must use --vscode-* variables for theme adaptive backgrounds. */
+:root {
+  --vestigivo-bg: #0e141e;
+  --vestigivo-symbol-bg: #111a26;
+  --vestigivo-surface: #172331;
+  --vestigivo-border: #2c3949;
+  --vestigivo-primary: #f4f8fc;
+  --vestigivo-muted: #afbfcc;
+  --vestigivo-trace: #3984a5;
+  --vestigivo-evidence: #48d7ce;
+  --vestigivo-correlation: #8566df;
+  --vestigivo-hypothesis: #e5a04f;
+  --vestigivo-incident: #f67880;
+}

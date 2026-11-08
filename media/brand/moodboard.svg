@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 850" role="img" aria-labelledby="title desc">
+  <title id="title">Vestigivo RCA — Dark Forensic Premium brand moodboard</title>
+  <desc id="desc">Approved network and evidence-lens icon with navy, teal, violet and amber visual system; incident timeline and typography directions.</desc>
+  <rect x="12" y="12" width="1256" height="826" rx="38" fill="#0E141E"/>
+  <text x="64" y="68" fill="#879CAE" font-family="Arial,sans-serif" letter-spacing="4" font-size="15">ARMOTUSITIO / DEVELOPER TOOLS</text>
+  <text x="64" y="138" fill="#F4F8FC" font-family="Arial,sans-serif" font-size="54" font-weight="800">VESTIGIVO <tspan fill="#48D7CE">RCA</tspan></text>
+  <text x="64" y="179" fill="#AFBFCC" font-family="Arial,sans-serif" font-size="22">Every incident leaves evidence.</text>
+  <rect x="64" y="216" width="510" height="334" rx="25" fill="#172331" stroke="#2C3949"/>
+  <text x="91" y="253" fill="#95A8B8" font-family="Arial,sans-serif" letter-spacing="2" font-size="15">APPROVED SYMBOL / EVIDENCE LENS</text>
+  <g transform="translate(150 262) scale(1.72)">
+  <rect x="16" y="10" width="134" height="134" rx="15" fill="#111A26"/>
+  <path d="M44 43 L72 61 L97 46 L123 64 L104 81" fill="none" stroke="#3984A5" stroke-width="3.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="44" cy="43" r="5" fill="#3984A5"/>
+  <circle cx="72" cy="61" r="5" fill="#3984A5"/>
+  <circle cx="97" cy="46" r="5" fill="#3984A5"/>
+  <circle cx="123" cy="64" r="5" fill="#3984A5"/>
+  <path d="M52 102 L75 83" fill="none" stroke="#8566DF" stroke-width="3.7" stroke-linecap="round"/>
+  <circle cx="52" cy="102" r="5" fill="#8566DF"/>
+  <circle cx="75" cy="83" r="5" fill="#8566DF"/>
+  <path d="M106 98 L114 112" fill="none" stroke="#3984A5" stroke-width="3.7" stroke-linecap="round"/>
+  <circle cx="114" cy="112" r="5" fill="#E5A04F"/>
+  <circle cx="97" cy="86" r="14.2" fill="#111A26" stroke="#48D7CE" stroke-width="4"/>
+  <circle cx="97" cy="86" r="5.1" fill="#48D7CE"/>
+</g>
+  <rect x="599" y="216" width="617" height="334" rx="25" fill="#172331" stroke="#2C3949"/>
+  <text x="629" y="253" fill="#95A8B8" font-family="Arial,sans-serif" letter-spacing="2" font-size="15">INCIDENT CASE / EVIDENCE STATES</text>
+  <path d="M656 295 V501" fill="none" stroke="#526A79" stroke-width="3"/>
+  <circle cx="656" cy="312" r="9" fill="#48D7CE"/><circle cx="656" cy="377" r="9" fill="#8566DF"/><circle cx="656" cy="443" r="9" fill="#E5A04F"/>
+  <text x="687" y="318" fill="#E7F1F9" font-family="Arial,sans-serif" font-size="22" font-weight="700">OBSERVED</text>
+  <text x="687" y="347" fill="#8DA2B5" font-family="Arial,sans-serif" font-size="16">A log or span explicitly present</text>
+  <text x="687" y="382" fill="#E7F1F9" font-family="Arial,sans-serif" font-size="22" font-weight="700">CORRELATED</text>
+  <text x="687" y="413" fill="#8DA2B5" font-family="Arial,sans-serif" font-size="16">Shared trace ID, not causal proof</text>
+  <text x="687" y="448" fill="#E7F1F9" font-family="Arial,sans-serif" font-size="22" font-weight="700">HYPOTHESIS</text>
+  <text x="687" y="480" fill="#8DA2B5" font-family="Arial,sans-serif" font-size="16">Requires reproducible verification</text>
+  <text x="64" y="617" fill="#96A9B9" font-family="Arial,sans-serif" font-size="17" letter-spacing="2">COLOR SYSTEM</text>
+  <g font-family="Arial,sans-serif" font-size="14">
+    <rect x="64" y="645" width="169" height="92" rx="15" fill="#111A26" stroke="#3E4B5B"/><text x="69" y="765" fill="#C4D0DA">#111A26</text>
+    <rect x="255" y="645" width="169" height="92" rx="15" fill="#3984A5"/><text x="260" y="765" fill="#C4D0DA">#3984A5</text>
+    <rect x="446" y="645" width="169" height="92" rx="15" fill="#48D7CE"/><text x="451" y="765" fill="#C4D0DA">#48D7CE</text>
+    <rect x="637" y="645" width="169" height="92" rx="15" fill="#8566DF"/><text x="642" y="765" fill="#C4D0DA">#8566DF</text>
+    <rect x="828" y="645" width="169" height="92" rx="15" fill="#E5A04F"/><text x="833" y="765" fill="#C4D0DA">#E5A04F</text>
+    <rect x="1019" y="645" width="169" height="92" rx="15" fill="#F4F8FC"/><text x="1024" y="765" fill="#C4D0DA">#F4F8FC</text>
+  </g>
+  <text x="64" y="811" fill="#96A9B9" font-family="Arial,sans-serif" font-size="15">System typography · Inter / Segoe UI · UI respects VS Code theme tokens · Monospace for trace and request IDs</text>
+</svg>

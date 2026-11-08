@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="600" viewBox="0 0 1800 600" role="img" aria-labelledby="title desc">
+  <title id="title">Vestigivo RCA — Dark approved brand lockup</title>
+  <desc id="desc">Approved investigation network symbol with a magnifying evidence lens, white Vestigivo and teal RCA wordmark and Incident Intelligence slash Root Cause Analysis descriptor. Outer rounded-card corners are truly transparent.</desc>
+  <!-- TRANSPARENCY: No full-canvas background. All pixels outside the rounded rect are alpha=0 on PNG export. -->
+  <rect x="30" y="48" width="1740" height="504" rx="90" fill="#0E141E" stroke="#263343" stroke-width="1.5"/>
+  <g transform="translate(93 98) scale(2.52)">
+  <rect x="16" y="10" width="134" height="134" rx="15" fill="#111A26"/>
+  <path d="M44 43 L72 61 L97 46 L123 64 L104 81" fill="none" stroke="#3984A5" stroke-width="3.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="44" cy="43" r="5" fill="#3984A5"/>
+  <circle cx="72" cy="61" r="5" fill="#3984A5"/>
+  <circle cx="97" cy="46" r="5" fill="#3984A5"/>
+  <circle cx="123" cy="64" r="5" fill="#3984A5"/>
+  <path d="M52 102 L75 83" fill="none" stroke="#8566DF" stroke-width="3.7" stroke-linecap="round"/>
+  <circle cx="52" cy="102" r="5" fill="#8566DF"/>
+  <circle cx="75" cy="83" r="5" fill="#8566DF"/>
+  <path d="M106 98 L114 112" fill="none" stroke="#3984A5" stroke-width="3.7" stroke-linecap="round"/>
+  <circle cx="114" cy="112" r="5" fill="#E5A04F"/>
+  <circle cx="97" cy="86" r="14.2" fill="#111A26" stroke="#48D7CE" stroke-width="4"/>
+  <circle cx="97" cy="86" r="5.1" fill="#48D7CE"/>
+</g>
+  <text x="538" y="306" fill="#F4F8FC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="131" font-weight="800" letter-spacing="2" textLength="790" lengthAdjust="spacingAndGlyphs">VESTIGIVO</text>
+  <text x="1355" y="306" fill="#48D7CE" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="131" font-weight="800" letter-spacing="2" textLength="260" lengthAdjust="spacingAndGlyphs">RCA</text>
+  <text x="545" y="381" fill="#48D7CE" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="30" font-weight="500" letter-spacing="3" textLength="1070" lengthAdjust="spacingAndGlyphs">INCIDENT INTELLIGENCE / ROOT CAUSE ANALYSIS</text>
+</svg>
