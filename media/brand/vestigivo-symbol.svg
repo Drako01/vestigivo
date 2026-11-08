@@ -1,18 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
-<!-- Rounded background only; outer corners intentionally alpha-transparent. Export as RGBA with no rectangular matte. -->
-  <title id="title">Vestigivo — convergence mark</title>
-  <desc id="desc">Distinct incident signals converge on a focal evidence lens, creating a subtle V silhouette.</desc>
-  <defs>
-    <linearGradient id="lens" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#4DD6C8"/><stop offset="1" stop-color="#83A6F7"/></linearGradient>
-    <linearGradient id="trace" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#8574E8"/><stop offset="1" stop-color="#4DD6C8"/></linearGradient>
-  </defs>
-  <rect width="256" height="256" rx="58" fill="#10151D"/>
-  <path d="M44 60 100 183 126 130" fill="none" stroke="url(#trace)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M211 60 155 183 130 130" fill="none" stroke="#83A6F7" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M128 40V85" fill="none" stroke="#E6A75B" stroke-width="7" stroke-linecap="round"/>
-  <circle cx="44" cy="60" r="11" fill="#8574E8"/><circle cx="211" cy="60" r="11" fill="#83A6F7"/>
-  <circle cx="100" cy="183" r="8" fill="#8574E8"/><circle cx="155" cy="183" r="8" fill="#83A6F7"/>
-  <circle cx="128" cy="40" r="8" fill="#E6A75B"/>
-  <circle cx="128" cy="124" r="31" fill="#10151D" stroke="url(#lens)" stroke-width="8"/>
-  <circle cx="128" cy="124" r="10" fill="#4DD6C8"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title desc">
+  <title id="title">Vestigivo RCA — incident evidence graph</title>
+  <desc id="desc">Blue trace links four nodes, purple observations connect to a turquoise evidence lens, and an amber endpoint closes the path, all over a dark rounded tile with truly transparent outside corners.</desc>
+
+  <rect x="16" y="10" width="134" height="134" rx="15" fill="#111A26"/>
+  <path d="M44 43 L72 61 L97 46 L123 64 L104 81" fill="none" stroke="#3984A5" stroke-width="3.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="44" cy="43" r="5" fill="#3984A5"/>
+  <circle cx="72" cy="61" r="5" fill="#3984A5"/>
+  <circle cx="97" cy="46" r="5" fill="#3984A5"/>
+  <circle cx="123" cy="64" r="5" fill="#3984A5"/>
+  <path d="M52 102 L75 83" fill="none" stroke="#8566DF" stroke-width="3.7" stroke-linecap="round"/>
+  <circle cx="52" cy="102" r="5" fill="#8566DF"/>
+  <circle cx="75" cy="83" r="5" fill="#8566DF"/>
+  <path d="M106 98 L114 112" fill="none" stroke="#3984A5" stroke-width="3.7" stroke-linecap="round"/>
+  <circle cx="114" cy="112" r="5" fill="#E5A04F"/>
+  <circle cx="97" cy="86" r="14.2" fill="#111A26" stroke="#48D7CE" stroke-width="4"/>
+  <circle cx="97" cy="86" r="5.1" fill="#48D7CE"/>
+
 </svg>
