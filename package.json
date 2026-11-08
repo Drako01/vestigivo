@@ -90,8 +90,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test dist/test/*.test.js",
     "package:vsix": "npm run build && vsce package --no-dependencies",
-    "check": "npm run build && node --test dist/test/*.test.js",
-    "brand:verify": "node scripts/verify-brand.cjs"
+    "check": "npm run build && node --experimental-test-coverage --test dist/test/*.test.js",
+    "brand:verify": "node scripts/verify-brand.cjs",
+    "test:coverage": "npm run check"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
