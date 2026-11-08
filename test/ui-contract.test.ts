@@ -8,7 +8,7 @@ const html = readFileSync(resolve(__dirname,'../../media/control-center.html'),'
 test('Control Center script parses with a real JavaScript parser', () => {
   const match = /<script nonce="__NONCE__">([\s\S]*?)<\/script>/.exec(html);
   assert.ok(match?.[1], 'No nonce-protected Control Center script found.');
-  assert.doesNotThrow(() => new Script(match![1], { filename: 'media/control-center.html' }));
+  assert.doesNotThrow(() => new Script(match?.[1] ?? '', { filename: 'media/control-center.html' }));
 });
 test('Control Center CSP blocks external and remote execution; no unsanitized HTML data sinks', () => {
   assert.match(html,/default-src 'none'/);
