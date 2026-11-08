@@ -68,6 +68,19 @@ export interface VerificationResult {
   repeatedCurrentFailures: number;
   explanation: string;
 }
+/** A human-authored verification plan; never executed by Vestigivo. */
+export interface VerificationPlan {
+  id: string;
+  hypothesisId: string;
+  assertion: string;
+  testId: string;
+  preconditions: string;
+  expectedOutcome: string;
+  risks: string;
+  cost: string;
+  createdAt: string;
+  status: 'PLANNED';
+}
 export interface Hypothesis {
   id: string;
   statement: string;
@@ -75,6 +88,7 @@ export interface Hypothesis {
   supports: string[];
   contradicts: string[];
   verification: VerificationResult | null;
+  plan?: VerificationPlan | null;
 }
 export interface InvestigatorNote {
   id: string;
