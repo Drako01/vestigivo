@@ -61,3 +61,10 @@ Checkpoint empaquetado [CI #42501342938](https://github.com/Drako01/vestigivo/ac
 - **GATE IMPLEMENTADO:** `npm run screenshots:verify` valida en CI las 4 imágenes PNG, dimensiones, enlaces, pesos, hashes distintos y fixture sintético.
 - **MANTENER ABIERTOS:** pruebas visuales físicas multiplataforma y accesibilidad, credenciales live, streaming, capacidades pendientes del prompt maestro y validación OIDC real tras merge. La captura genuina no equivale a completar toda la calidad AAAAA.
 - **FINAL CI:** esperar PASS sobre el último HEAD antes de aprobar merge. No se ejecutó ningún publish.
+
+## Iteración 0.1.2 — GitHub Release después de ambos registros (2026-11-08)
+
+- **CONFIRMADO:** 0.1.1 fue publicada correctamente en Marketplace y Open VSX en [GitHub Actions #42508738437](https://github.com/Drako01/vestigivo/actions/runs/42508738437). PR #3 fusionado; `main` anterior a esta rama en `0c82233d7bf853075f9388c00da8fd8c6c47764d`.
+- **IMPLEMENTADO EN RAMA:** v0.1.2 aumenta SemVer y agrega el job `github-release` al workflow de publicación. Reutiliza el artifact idéntico al de ambos registros, verifica `SHA256SUMS`, valida tag `v0.1.2` apuntando al SHA de merge y crea Release con notas + VSIX + SHA256SUMS. En rerun no sobrescribe assets.
+- **GATES:** require green CI de PR, aprobación de ruleset, revisión de environment `github-release`, y posteriores jobs Marketplace/Open VSX PASS. La nueva versión **no está publicada** hasta merge y éxito del workflow.
+- **No cambio de scope:** QA de accesibilidad, ejecución remota, streaming y otras funciones futuras permanecen pendientes según checklist.
