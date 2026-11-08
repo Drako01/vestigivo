@@ -118,6 +118,7 @@ export class ProviderClient {
       note: 'Read-only provider data; it is not a local observation or a causal attribution. No local file was uploaded.' };
   }
   private async readJson(url: URL, token: string, signal?: AbortSignal): Promise<unknown> {
+    if (signal?.aborted) throw new Error('Provider request cancelled before transmission.');
     const abort = new AbortController();
     const timeout = setTimeout(() => abort.abort(), 5000);
     const upstream = (): void => abort.abort();
