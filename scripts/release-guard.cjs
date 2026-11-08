@@ -65,7 +65,7 @@ async function authorize() {
     assert.equal(found.length,1,'Missing or duplicated CI job: '+name);
     assert.equal(found[0].conclusion,'success','CI job is not green: '+name);
     if(name.includes('macos')){
-      const native=found[0].steps?.find(s=>s.name==='Attempt native VS Code Extension Host smoke');
+      const native=found[0].steps?.find(s=>s.name==='Genuine native VS Code Extension Host smoke (blocking)');
       assert.equal(native?.conclusion,'success','macOS Host smoke was not actually successful, even if its matrix job appears green');
     }
   }
