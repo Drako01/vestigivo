@@ -33,7 +33,9 @@ export class CaseStore {
   async read(id: string): Promise<IncidentCase> {
     const data = await vscode.workspace.fs.readFile(this.location(id));
     if (data.byteLength > MAX_CASE_BYTES) throw new Error('Case storage size budget exceeded.');
-    return loadCase(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(data)) as unknown);
+    const incident = loadCase(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(data)) as unknown);
+    if (incident.id !== id) throw new Error('Stored case identity does not match the selected file.');
+    return incident;
   }
   async save(incident: IncidentCase): Promise<void> {
     if (!CASE_ID.test(incident.id)) throw new Error('Invalid case identifier.');
