@@ -39,13 +39,20 @@ jobs:
         shell: bash
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail
           echo 'host=false' >> "$GITHUB_OUTPUT"
           echo 'bench=false' >> "$GITHUB_OUTPUT"
-          if [[ -z "$HEAD_SHA" ]]; then exit 0; fi
-          git fetch --no-tags --depth=2 origin "$HEAD_SHA"
-          changed="$(git diff --name-only "$HEAD_SHA^" "$HEAD_SHA")"
+          if [[ -z "$HEAD_SHA" || -z "$BASE_SHA" ]]; then
+            echo 'host=true' >> "$GITHUB_OUTPUT"
+            echo 'bench=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Gate scope against the entire PR, not only its final commit.
+          # A docs-only final commit must never hide earlier core/UI changes.
+          git fetch --no-tags --depth=1 origin "$HEAD_SHA" "$BASE_SHA"
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
           if grep -Eq '^(src/extension\.ts|src/ui/|src/adapters/store\.ts|media/control-center\.html|test/host/)' <<< "$changed"; then
             echo 'host=true' >> "$GITHUB_OUTPUT"
           fi
