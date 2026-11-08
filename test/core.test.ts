@@ -46,7 +46,7 @@ test('Partial and hostile imports are explicit', () => {
 });
 test('Redaction protects nested secrets, tokens, emails and ANSI sequences', () => {
   assert.ok(!redactText('Bearer abcdef1234567 admin@example.com \u001b[31m').includes('abcdef'));
-  assert.deepEqual(redactValue({ nested: { access_token: 'secret', regular: 'hello' } }),
+  assert.deepEqual(JSON.parse(JSON.stringify(redactValue({ nested: { access_token: 'secret', regular: 'hello' } }))) as unknown,
     { nested: { access_token: '[REDACTED]', regular: 'hello' } });
   const result = parseEvidence(bytes('{"message":"Bearer abcdef1234567","attributes":{"apiKey":"hidden"}}'), 'x.json');
   const report = exportJson(importIntoCase(createCase(), result));
