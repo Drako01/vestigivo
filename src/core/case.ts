@@ -48,7 +48,7 @@ export function loadCase(input: unknown): IncidentCase {
   if (!record) throw new Error('Invalid case document.');
   const version = record.schemaVersion;
   if (version !== 0 && version !== SCHEMA_VERSION) throw new Error('Unsupported case schema version; no implicit downgrade.');
-  if (!validText(record.id, 36) || !/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(record.id) ||
+  if (!validText(record.id, 36) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(record.id) ||
       !validText(record.title, 180) || !validText(record.createdAt, 64) ||
       !validText(record.updatedAt, 64)) throw new Error('Invalid case identity or metadata.');
   const sources = record.sources, observations = record.observations, hypotheses = record.hypotheses,
