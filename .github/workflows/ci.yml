@@ -2,7 +2,15 @@ name: Vestigivo RCA PR Verification
 on:
   pull_request:
     branches: [main]
-    paths: ['src/**', 'test/**', 'media/**', 'package.json', 'package-lock.json', 'tsconfig.json', '.github/workflows/ci.yml']
+    paths:
+      - 'src/**'
+      - 'test/**'
+      - 'media/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - '.github/workflows/ci.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -11,86 +19,64 @@ concurrency:
   cancel-in-progress: true
 jobs:
   verify:
-    name: TypeScript, unit tests and VSIX candidate
+    name: TypeScript, core tests, scoped E2E and private VSIX
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 18
     steps:
-      - name: Checkout exact PR revision
+      - name: Checkout tested PR candidate
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
-          cache: 'npm'
-      - name: Reproducible dependency install (npm ci)
+          cache: npm
+      - name: Install pinned dependencies
         run: npm ci --ignore-scripts --no-fund
-      - name: Compile once and test
+      - name: Compile and run core tests with enforced coverage
         run: npm run check
-      - name: Decide whether the native Extension Host needs another smoke
-        id: host-scope
+      - name: Select expensive gates by changed paths
+        id: scope
         shell: bash
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          if [[ -z "$HEAD_SHA" ]]; then echo "run=false" >> "$GITHUB_OUTPUT"; exit 0; fi
-          git fetch origin "$HEAD_SHA" --depth=2
-          if git diff --name-only "$HEAD_SHA^" "$HEAD_SHA" | grep -E '^(src/extension\.ts|src/ui/|media/control-center\.html|test/host/)'; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          echo 'host=false' >> "$GITHUB_OUTPUT"
+          echo 'bench=false' >> "$GITHUB_OUTPUT"
+          if [[ -z "$HEAD_SHA" ]]; then exit 0; fi
+          git fetch --no-tags --depth=2 origin "$HEAD_SHA"
+          changed="$(git diff --name-only "$HEAD_SHA^" "$HEAD_SHA")"
+          if grep -Eq '^(src/extension\.ts|src/ui/|src/adapters/store\.ts|media/control-center\.html|test/host/)' <<< "$changed"; then
+            echo 'host=true' >> "$GITHUB_OUTPUT"
           fi
-          if git diff --name-only "$HEAD_SHA^" "$HEAD_SHA" | grep -E '^(src/core/(parser|correlate|report|case)\.ts|scripts/benchmark\.cjs) (Linux, UI-relevant changes only)
-        if: steps.host-scope.outputs.run == 'true'
+          if grep -Eq '^(src/core/(parser|correlate|report|case)\.ts|scripts/benchmark\.cjs)' <<< "$changed"; then
+            echo 'bench=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Genuine VS Code Extension Development Host smoke (Linux)
+        if: steps.scope.outputs.host == 'true'
         run: xvfb-run -a npm run test:host
-      - name: Deterministic core benchmarks (only if relevant implementation changed)
-        if: steps.host-scope.outputs.bench == 'true'
+      - name: Deterministic core benchmarks 1K/10K/100K budget
+        if: steps.scope.outputs.bench == 'true'
         run: npm run benchmark
       - name: Upload private benchmark evidence
-        if: steps.host-scope.outputs.bench == 'true'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: steps.scope.outputs.bench == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: vestigivo-core-benchmark
           path: benchmark-result.json
           retention-days: 7
-      - name: Audit runtime dependencies
+      - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
-      - name: Verify PNG dimensions, transparency and Activity Bar SVG
+      - name: Verify original brand PNG alpha and Activity Bar icon
         run: npm run brand:verify
-      - name: Package a private VSIX candidate
+      - name: Package private VSIX without recompiling
         run: npx vsce package --no-dependencies
-      - name: Record checksum and inventory
+      - name: Record VSIX checksum and package inventory
         shell: bash
         run: |
-          sha256sum *.vsix > SHA256SUMS
-          unzip -l *.vsix | head -n 60
-      - name: Upload artifact (no publish)
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: vestigivo-rca-vsix-candidate
-          path: |
-            *.vsix
-            SHA256SUMS
-          retention-days: 7
-; then
-            echo "bench=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "bench=false" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Real VS Code Extension Host smoke (Linux, UI-relevant changes only)
-        if: steps.host-scope.outputs.run == 'true'
-        run: xvfb-run -a npm run test:host
-      - name: Audit runtime dependencies
-        run: npm audit --omit=dev --audit-level=high
-      - name: Verify PNG dimensions, transparency and Activity Bar SVG
-        run: npm run brand:verify
-      - name: Package a private VSIX candidate
-        run: npx vsce package --no-dependencies
-      - name: Record checksum and inventory
-        shell: bash
-        run: |
-          sha256sum *.vsix > SHA256SUMS
-          unzip -l *.vsix | head -n 60
-      - name: Upload artifact (no publish)
+          sha256sum *.vsix | tee SHA256SUMS
+          unzip -l *.vsix | head -n 70
+      - name: Upload private VSIX candidate (never publish)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: vestigivo-rca-vsix-candidate
