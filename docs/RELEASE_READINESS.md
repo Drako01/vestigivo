@@ -43,3 +43,13 @@ Checkpoint empaquetado [CI #42501342938](https://github.com/Drako01/vestigivo/ac
 - **IMPLEMENTED IN DRAFT:** `.github/workflows/publish.yml` now uses OIDC for **both** registries (`marketplace` and `open-vsx`, both with `id-token: write`); no PAT fallback. Open VSX job explicitly clears `OVSX_PAT` and uses `--trusted-publishing`.
 - **BLOCKED:** Register Open VSX Trusted Publisher `Drako01/vestigivo`, workflow `publish.yml`, environment `open-vsx` after public visibility propagates; confirm Marketplace OIDC policy and protected environments. The legacy PAT secret should be deleted after OIDC is confirmed.
 - PR remains Draft. No merge, release or publication of `0.1.1` was triggered.
+
+## Checkpoint — Trusted Publishers + macOS Host (2026-11-08)
+
+**OWNER CONFIRMED:** los dos Trusted Publishers fueron configurados en Visual Studio Marketplace y Open VSX. El repositorio ahora es público; `main` no se modificó.
+
+**CI VERIFIED:** [run #42506224026](https://github.com/Drako01/vestigivo/actions/runs/42506224026), SHA `4feca58c7c7e4376bd5f4d6b012e1d74e33f07de` — Linux, Windows y macOS verde; macOS Extension Host **PASS bloqueante** tras actualizar `@vscode/test-electron` a 3.1.0, 45/45 tests y cobertura core 96,66 % / 87,61 %. Linux VSIX 0.1.1 instalado y ejecutado en perfil aislado (sin interacción física). Los warnings históricos de macOS son obsoletos para este SHA.
+
+**UNVERIFIED:** ambos canjes OIDC reales de `0.1.1` tras merge; configuración/restricciones de los environments inspeccionadas por API; screenshots auténticas, QA UX/a11y físico, integraciones live y DoD restante.
+
+**DECISIÓN:** sigue **NOT READY FOR MERGE / PUBLISH**, aunque las políticas de identidad y compatibilidad nativa básica están desbloqueadas.
