@@ -71,7 +71,7 @@ footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--border);color
 <body>
 <div id="shell">
 <header>
-<div class="brand"><div class="mark" aria-hidden="true">◎</div><div><div class="eyebrow">Incident Intelligence</div><h1>VESTIGIVO RCA</h1><p>Incident Intelligence / Root Cause Analysis</p></div></div>
+<div class="brand"><div class="mark" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="46" height="46" focusable="false" aria-hidden="true"><rect x="16" y="10" width="134" height="134" rx="15" fill="#111A26"/><path d="M44 43 L72 61 L97 46 L123 64 L104 81" fill="none" stroke="#3984A5" stroke-width="3.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="44" cy="43" r="5" fill="#3984A5"/><circle cx="72" cy="61" r="5" fill="#3984A5"/><circle cx="97" cy="46" r="5" fill="#3984A5"/><circle cx="123" cy="64" r="5" fill="#3984A5"/><path d="M52 102 L75 83" fill="none" stroke="#8566DF" stroke-width="3.7" stroke-linecap="round"/><circle cx="52" cy="102" r="5" fill="#8566DF"/><circle cx="75" cy="83" r="5" fill="#8566DF"/><path d="M106 98 L114 112" fill="none" stroke="#3984A5" stroke-width="3.7" stroke-linecap="round"/><circle cx="114" cy="112" r="5" fill="#E5A04F"/><circle cx="97" cy="86" r="14.2" fill="#111A26" stroke="#48D7CE" stroke-width="4"/><circle cx="97" cy="86" r="5.1" fill="#48D7CE"/></svg></div><div><div class="eyebrow">Incident Intelligence</div><h1>VESTIGIVO RCA</h1><p>Incident Intelligence / Root Cause Analysis</p></div></div>
 <div class="actions"><button data-action="new" type="button" data-label="new">New case</button><button data-action="open" type="button" data-label="open">Open saved</button><button data-action="import" type="button" class="primary" data-label="import">Import evidence</button></div>
 </header>
 <p class="description" id="subtitle">Every incident leaves evidence. Observations and correlations are not causal proof.</p>
@@ -126,7 +126,35 @@ const h=el('div','card');append(h,el('h3','',t('claim')));const claim=el('textar
 for(const hypothesis of model.case.hypotheses)root.append(card(hypothesis.state,hypothesis.statement));
 for(const note of model.case.notes)root.append(card(note.at,note.text));
 }
-function settings(root){append(root,head(t('settings'),'Privacy and import safety boundaries.',[button(t('settingsOpen'),'settings',true)]));root.append(card('Default privacy','Local first, no automatic upload, no background scans. Persistence is opt-in and stored cases are not encrypted by Vestigivo.'));root.append(card('RCA evidence contract','OBSERVED and CORRELATED do not imply a cause. Only controlled comparable reproduction can support a narrowly scoped CONFIRMED statement.'));root.append(card('Import budgets','Per-source 8 MiB / 10,000 observations by default. Configure in VS Code Settings.'))}
+function settings(root){
+append(root,head(t('settings'),'Privacy, explicit third-party access and import budgets.',[button(t('settingsOpen'),'settings',true)]));
+root.append(card('Default privacy','Local-first. No automatic uploads or scans; investigations persist only with consent. Data at rest is not encrypted by Vestigivo.'));
+root.append(card('RCA evidence contract','Observed signals and correlated identifiers are not a causal finding; external provider records are context only.'));
+root.append(card('Budgets','8 MiB and 10,000 events per selected source by default; a case is capped at 10,000 observations.'));
+root.append(el('h2','',model.language==='es'?'Conectores opcionales':'Optional integrations'));
+root.append(paragraph(model.language==='es'?'Ninguna cuenta es necesaria para investigar archivos locales. Las credenciales se guardan solo en SecretStorage.':'No account is needed for local evidence. Tokens are stored only in VS Code SecretStorage.'));
+const panels=el('div','grid');
+for(const name of ['sentry','grafana']){
+  const connected=!!(model.providers&&model.providers[name]),p=el('section','card');
+  append(p,el('h3','',name==='sentry'?'Sentry issues':'Grafana Cloud annotations'),
+    el('span','tag',connected?(model.language==='es'?'Conectado':'Connected'):(model.language==='es'?'Desconectado':'Disconnected')));
+  const description=name==='sentry'?'Read-only issues by explicit organization/project scope (event:read).':'Read-only annotations from an official Grafana Cloud stack. Legacy alert annotations may not be returned.';
+  p.append(paragraph(description));
+  const commands=el('div','inline-actions');
+  const connect=button(model.language==='es'?'Conectar':'Connect','providerConnect',true,{provider:name});
+  const read=button(model.language==='es'?'Consultar':'Read up to 25','providerFetch',false,{provider:name});
+  const disconnect=button(model.language==='es'?'Desconectar':'Disconnect','providerDisconnect',false,{provider:name});
+  connect.disabled=!!model.busy||connected;read.disabled=!!model.busy||!connected;disconnect.disabled=!!model.busy||!connected;
+  append(commands,connect,read,disconnect);p.append(commands);panels.append(p);
+}
+root.append(panels);
+const result=model.providerResult;
+if(result&&result.entries){
+  root.append(el('h3','',result.provider+' — '+result.totalReturned+' records'));
+  root.append(paragraph(result.note));
+  for(const entry of result.entries.slice(0,25))root.append(card(entry.title||entry.id,(entry.kind||'')+' · '+(entry.service||'unknown service')+' · '+(entry.timestamp||'time unknown')+' · '+entry.id));
+}
+}
 function renderContent(){const root=$('content');root.replaceChildren();if(!valid())return;({overview,timeline,evidence,correlations,git,report,cases,settings}[tab]||overview)(root);}
 function render(){if(!valid())return;document.documentElement.lang=model.language==='es'?'es':'en';for(const b of document.querySelectorAll('[data-label]'))b.textContent=t(b.dataset.label);$('subtitle').textContent=model.language==='es'?'Cada incidente deja evidencia. Observar y correlacionar no demuestra causalidad.':'Every incident leaves evidence. Observation and correlation do not prove causality.';
 const s=$('status');s.replaceChildren(el('span','status-name',model.status),el('span','status-detail',model.details||'Ephemeral session; no automatic persistence.'));const stats=$('stats');stats.replaceChildren(kpi(model.case.sources.length,t('source')),kpi(model.case.observations.length,t('events')),kpi(model.case.correlations.length,t('groups')),kpi(model.case.hypotheses.filter(h=>h.state!=='CONFIRMED').length,t('unverified')));
@@ -135,6 +163,7 @@ document.addEventListener('click',event=>{const button=event.target.closest('but
 if(action==='note'){if(noteText.trim())send('note',{text:noteText});noteText='';return}
 if(action==='hypothesis'){if(claimText.trim().length>=10)send('hypothesis',{text:claimText});claimText='';return}
 if(action==='openSource'){send(action,{observationId:button.dataset.observationId});return}
+if(action.startsWith('provider')){send(action,{provider:button.dataset.provider});return}
 send(action)});
 $('navigation').addEventListener('keydown',event=>{if(!['ArrowRight','ArrowLeft','Home','End'].includes(event.key))return;event.preventDefault();let i=sections.indexOf(tab);if(event.key==='ArrowRight')i=(i+1)%sections.length;if(event.key==='ArrowLeft')i=(i-1+sections.length)%sections.length;if(event.key==='Home')i=0;if(event.key==='End')i=sections.length-1;tab=sections[i];render();$('navigation').querySelectorAll('button')[i].focus()});
 window.addEventListener('message',event=>{if(event.data&&event.data.type==='state'){model=event.data;render()}});
