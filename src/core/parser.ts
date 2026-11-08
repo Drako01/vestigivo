@@ -21,8 +21,6 @@ const obj = (value: unknown): Obj | null => value && typeof value === 'object' &
 const arr = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
 const str = (value: unknown): string | undefined => typeof value === 'string' && value.trim() ? value.trim() : undefined;
 const choose = (...values: unknown[]): string | undefined => values.map(str).find((value): value is string => value !== undefined);
-const asString = (value: unknown): string | undefined =>
-  str(value) ?? (typeof value === 'number' && Number.isFinite(value) ? String(value) : undefined);
 function attributeValue(value: unknown, depth = 0): unknown {
   if (depth > 8) return '[TRUNCATED DEPTH]';
   const v = obj(value);
@@ -56,7 +54,7 @@ function time(raw: unknown, nanoseconds: boolean): { iso: string | null; nanos?:
       return { iso, nanos: n.toString() };
     } catch { return { iso: null, issue: 'Invalid OTLP nanosecond timestamp; no timestamp inferred.' }; }
   }
-  if (typeof raw !== 'string' || !/^\d{4}-\d\d-\d\d[Tt ]/.test(raw)) return { iso: null, issue: 'Invalid or ambiguous timestamp; time is unknown.' };
+  if (typeof raw !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/i.test(raw)) return { iso: null, issue: 'Invalid or ambiguous timestamp; time is unknown.' };
   const ms = Date.parse(raw);
   return Number.isFinite(ms) ? { iso: new Date(ms).toISOString() } : { iso: null, issue: 'Invalid ISO timestamp; time is unknown.' };
 }
