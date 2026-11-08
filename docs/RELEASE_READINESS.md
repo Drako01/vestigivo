@@ -35,3 +35,11 @@ Se requieren pruebas de clic físico, accesibilidad y revisión del propietario 
 
 
 Checkpoint empaquetado [CI #42501342938](https://github.com/Drako01/vestigivo/actions/runs/42501342938): `PACKAGED VSIX INSTALL PASS` y `PACKAGED VSIX HOST PASS` en Linux. El test ejecuta el directorio instalado vía devPath; **no equivale a prueba de UI física ni activación automática**. Mac Host registra `ENOENT` pese a job verde. Documento sincronizado con el [checklist](ENTERPRISE_AAAAA_CHECKLIST.md).
+
+
+## Checkpoint — 0.1.1: Public repository and Open VSX OIDC (2026-11-08)
+
+- **OWNER ACTION PENDING VERIFICATION:** the owner decided to make `Drako01/vestigivo` public. Last queried repository visibility was still `private`; do not claim it is public until GitHub reflects the change. A visibility audit must precede any release.
+- **IMPLEMENTED IN DRAFT:** `.github/workflows/publish.yml` now uses OIDC for **both** registries (`marketplace` and `open-vsx`, both with `id-token: write`); no PAT fallback. Open VSX job explicitly clears `OVSX_PAT` and uses `--trusted-publishing`.
+- **BLOCKED:** Register Open VSX Trusted Publisher `Drako01/vestigivo`, workflow `publish.yml`, environment `open-vsx` after public visibility propagates; confirm Marketplace OIDC policy and protected environments. The legacy PAT secret should be deleted after OIDC is confirmed.
+- PR remains Draft. No merge, release or publication of `0.1.1` was triggered.
