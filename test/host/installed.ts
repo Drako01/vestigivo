@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath, runTests } from '@vscode/test-electron';
 
 const EXTENSION_ID = 'armotusitio.vestigivo';
-const VERSION = '0.1.0';
+const VERSION = (JSON.parse(readFileSync(join(resolve(__dirname, '../../..'), 'package.json'), 'utf8')) as {version: string}).version;
 
 /** Installs the actual VSIX in a throwaway VS Code profile before testing its packaged bits. */
 async function main(): Promise<void> {
