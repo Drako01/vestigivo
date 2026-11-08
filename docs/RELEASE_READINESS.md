@@ -53,3 +53,11 @@ Checkpoint empaquetado [CI #42501342938](https://github.com/Drako01/vestigivo/ac
 **UNVERIFIED:** ambos canjes OIDC reales de `0.1.1` tras merge; configuración/restricciones de los environments inspeccionadas por API; screenshots auténticas, QA UX/a11y físico, integraciones live y DoD restante.
 
 **DECISIÓN:** sigue **NOT READY FOR MERGE / PUBLISH**, aunque las políticas de identidad y compatibilidad nativa básica están desbloqueadas.
+
+## Checkpoint — Capturas reales integradas (2026-11-08)
+
+- **PASS — Evidencia visual real:** 4 PNG de 1440×900 capturados desde el VS Code Electron Extension Development Host en Linux, usando fixture sintético y sin credenciales. [Capture run #42507835267](https://github.com/Drako01/vestigivo/actions/runs/42507835267); `media/screenshots/`.
+- **PASS — Documentación:** README inglés y guía española incluyen galería auténtica, captions, limitaciones y atribución ArmoTuSitio.
+- **GATE IMPLEMENTADO:** `npm run screenshots:verify` valida en CI las 4 imágenes PNG, dimensiones, enlaces, pesos, hashes distintos y fixture sintético.
+- **MANTENER ABIERTOS:** pruebas visuales físicas multiplataforma y accesibilidad, credenciales live, streaming, capacidades pendientes del prompt maestro y validación OIDC real tras merge. La captura genuina no equivale a completar toda la calidad AAAAA.
+- **FINAL CI:** esperar PASS sobre el último HEAD antes de aprobar merge. No se ejecutó ningún publish.
