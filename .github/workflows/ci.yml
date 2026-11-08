@@ -124,16 +124,15 @@ jobs:
         run: sha256sum *.vsix
       # GUI/desktop availability varies across hosted runners.
       # Capture genuine Extension Host results, but do not claim PASS for skipped environments.
-      - name: Attempt native VS Code Extension Host smoke
+      - name: Genuine native VS Code Extension Host smoke (blocking)
         id: native_host
-        continue-on-error: true
         run: npm run test:host
       - name: Report native Extension Host status
         if: always()
         shell: bash
         run: |
           echo "Native Extension Host outcome: ${{ steps.native_host.outcome }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "A failure here is a visible WARNING, not a fabricated GUI PASS." >> "$GITHUB_STEP_SUMMARY"
+          echo "A failing native Host test blocks release; it is never counted as PASS." >> "$GITHUB_STEP_SUMMARY"
       - name: Upload private native VSIX candidate
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
