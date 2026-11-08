@@ -234,3 +234,21 @@ La siguiente sesión debe comenzar por el último run del PR #3 y actualizar est
 - [ ] El roadmap AAAAA mantiene funciones avanzadas y matrices de QA pendientes, explícitamente descritas como limitaciones de la versión; **no declarar 100 % de fases 0–6 ni certificación de Enterprise AAAAA**.
 
 **Conclusión del gate solicitado por el propietario:** el bloqueo específico de las capturas para README se considera **RESUELTO**, con pruebas reproducibles y artefactos de VSIX. El release de 0.1.1 puede ser aprobado por el propietario como entrega incremental con las limitaciones documentadas, una vez que el último HEAD del checklist vuelva a tener CI verde.
+
+### Iteración release v0.1.2 — GitHub Releases automatizados (2026-11-08)
+
+**Base verificada:** PR #3 fusionado a `main` en `0c82233d7bf853075f9388c00da8fd8c6c47764d`. [Publish #42508738437](https://github.com/Drako01/vestigivo/actions/runs/42508738437): SUCCESS en authorize, package, Marketplace y Open VSX para 0.1.1. No existía GitHub Release antes de esta evolución.
+
+- [x] Rama independiente `feat/github-release-automation-0-1-2` desde el `main` fusionado; ninguna escritura directa a `main`.
+- [x] Versión candidata **0.1.2** sincronizada en `package.json`, raíz de `package-lock.json`, `CHANGELOG.md`, README y guía española.
+- [x] `.github/workflows/publish.yml`: job nuevo `github-release` condicionado a success previo de **Marketplace y Open VSX**, con acceso a los mismos bytes de `vestigivo-0.1.2.vsix` + `SHA256SUMS`, sin nueva compilación.
+- [x] Tag protegido `v0.1.2` asociado al SHA exacto fusionado; si ya existe para otro SHA, fallar sin alterarlo. Verificar `main` no avanzado antes de crear Release.
+- [x] GitHub Release con nombre `Vestigivo RCA v0.1.2`, notas automáticas, VSIX y checksum, verificación posterior por descarga; reejecución idempotente y sin sobreescribir assets existentes.
+- [x] Conservado OIDC de Marketplace/Open VSX, sin PAT, y guard de versión + CI del PR para evitar publicar código no aprobado.
+- [x] Tests de contrato de release en `test/release-contract.test.ts`.
+- [ ] Comprobar **CI final** de la nueva rama / PR con tests TS, Host Linux/Windows/macOS, paquete y checks requeridos.
+- [ ] Configurar/revisar GitHub Environment **`github-release`** (solo `main`, aprobaciones opcionales) antes de fusionar.
+- [ ] Aprobar y fusionar el PR para **activar publicación real de 0.1.2**. Confirmar SHA-256 y link de GitHub Release después del workflow; no declarar publicado antes.
+- [ ] Mantener los pendientes del roadmap Enterprise AAAAA en su scope de futuras iteraciones, sin confundir cierre de release automation con cierre de todas las fases.
+
+**Continuidad:** la 0.1.2 es el primer release que tendrá asset VSIX también en GitHub Releases; **no republicar 0.1.1**.
