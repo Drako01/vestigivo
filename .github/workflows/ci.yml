@@ -77,6 +77,8 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
       - name: Verify original brand PNG alpha and Activity Bar icon
         run: npm run brand:verify
+      - name: Verify real screenshots and synthetic provenance
+        run: npm run screenshots:verify
       - name: Package private VSIX without recompiling
         run: npx vsce package --no-dependencies
       - name: Record VSIX checksum and package inventory
