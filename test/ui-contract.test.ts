@@ -30,3 +30,14 @@ test('Every advertised provider/bookmark action is dispatched to extension-side 
   assert.ok(html.includes("send(action,{provider:button.dataset.provider})"));
   assert.ok(html.includes("send(action,{observationId:button.dataset.observationId})"));
 });
+
+test('Timeline supports bounded paging and exact contextual filters without network dependencies', () => {
+  for(const token of ["trace:'',request:'',from:'',to:''","o.traceId===filter.trace.trim()",
+    "o.requestId===filter.request.trim()","pageSize=100","timelineNext","timelinePrevious",
+    "aria-controls','content'","data-filter"]) assert.ok(html.includes(token),token);
+});
+test('Manual verification plan is rendered as textContent-only form without running any check', () => {
+  for(const token of ['verificationPlan','planEditorId','data-plan-field','checkValidity()','Falsifiable assertion'])
+    assert.ok(html.includes(token),token);
+  assert.ok(!html.includes('child_process'));
+});
