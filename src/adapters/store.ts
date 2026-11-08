@@ -5,7 +5,7 @@ import { redactIncident } from '../core/redact';
 import type { IncidentCase } from '../core/types';
 const MAX_CASE_BYTES = 8 * 1024 * 1024;
 const MAX_CASES = 20;
-const CASE_ID = /^[0-9a-f-]{36}$/i;
+const CASE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export class CaseStore {
   constructor(private readonly root: vscode.Uri) {}
   private location(id: string): vscode.Uri {
