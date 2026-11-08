@@ -91,3 +91,49 @@ jobs:
             *.vsix
             SHA256SUMS
           retention-days: 7
+
+  compatibility:
+    name: Native OS validation (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    steps:
+      - name: Checkout same PR candidate
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts --no-fund
+      - name: Real OS TypeScript, core and coverage gates
+        run: npm run check
+      - name: Verify brand assets on native filesystem
+        run: npm run brand:verify
+      - name: Package candidate on native OS
+        run: npx vsce package --no-dependencies
+      - name: Record OS-specific package checksum
+        shell: bash
+        run: sha256sum *.vsix
+      # GUI/desktop availability varies across hosted runners.
+      # Capture genuine Extension Host results, but do not claim PASS for skipped environments.
+      - name: Attempt native VS Code Extension Host smoke
+        id: native_host
+        continue-on-error: true
+        run: npm run test:host
+      - name: Report native Extension Host status
+        if: always()
+        shell: bash
+        run: |
+          echo "Native Extension Host outcome: ${{ steps.native_host.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "A failure here is a visible WARNING, not a fabricated GUI PASS." >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload private native VSIX candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: vestigivo-native-${{ matrix.os }}-vsix
+          path: '*.vsix'
+          retention-days: 7
