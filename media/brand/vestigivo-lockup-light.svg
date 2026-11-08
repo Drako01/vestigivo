@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="920" height="260" viewBox="0 0 920 260" role="img" aria-label="Vestigivo RCA Incident Intelligence wordmark on light background">
+<!-- Rounded background only; outer corners intentionally alpha-transparent. Export as RGBA with no rectangular matte. -->
  <rect width="920" height="260" rx="30" fill="#F4F7FA"/>
  <g transform="translate(34 29) scale(.79)">
   <path d="M44 60 100 183 126 130M211 60 155 183 130 130" fill="none" stroke="#167E7C" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>

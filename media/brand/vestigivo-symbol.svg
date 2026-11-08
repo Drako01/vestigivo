@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+<!-- Rounded background only; outer corners intentionally alpha-transparent. Export as RGBA with no rectangular matte. -->
   <title id="title">Vestigivo — convergence mark</title>
   <desc id="desc">Distinct incident signals converge on a focal evidence lens, creating a subtle V silhouette.</desc>
   <defs>

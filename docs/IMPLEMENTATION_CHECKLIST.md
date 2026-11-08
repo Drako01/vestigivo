@@ -4,9 +4,14 @@
 - [x] Private repository and \`main\` initialized.
 - [x] Feature branch for review.
 - [x] Product vision, evidence contract, security boundaries.
-- [x] Dark/Light Vestigivo RCA logo SVG, monochrome Activity Bar icon, editable moodboard and tokens.
+- [x] Draft Dark/Light Vestigivo RCA lockups, monochrome Activity Bar icon, editable moodboard and tokens.
+- [x] Preserve the original logo preferred by the creator as visual reference; do not redesign the symbol.
+- [x] SVG draft backgrounds use rounded rects with transparent outer corners.
+- [ ] Verify final source assets visually against the preferred original logo.
 - [x] Approved public naming: Vestigivo RCA; internal identifier stays vestigivo.
 - [ ] Human visual inspection for tiny icon and production raster assets.
+- [ ] Export RGBA PNGs and verify transparent pixels at all corners (alpha 0), including 128px and 256px variants.
+- [ ] Inspect logo against dark and light checkerboards; no opaque rectangular matting.
 - [ ] Trademark/name clearance (before public launch).
 
 ## Phase 1 — first working version
