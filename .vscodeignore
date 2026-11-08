@@ -1,0 +1,17 @@
+src/**
+test/**
+docs/**
+.github/**
+.editorconfig
+.gitattributes
+.gitignore
+tsconfig.json
+*.vsix
+*.log
+coverage/**
+node_modules/**
+!node_modules/.bin/**
+scripts/**
+dist/test/**
+dist/**/*.map
+benchmark-result.json

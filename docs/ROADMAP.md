@@ -1,13 +1,15 @@
-# Vestigivo RCA roadmap
+# Vestigivo RCA — Roadmap
 
-| Phase | Deliverable | Status |
+Fuente obligatoria de requisitos: VESTIGIVO_RCA_PROMPT_MAESTRO_ENTERPRISE_AAAAA.md. Seguimiento: ENTERPRISE_AAAAA_CHECKLIST.md.
+
+| Fase | Alcance | Estado |
 |---|---|---|
-| 0. Brand and product direction | SVG identity, moodboard, contracts, architecture | In this PR |
-| 1. Evidence MVP | local JSONL/OTLP import, correlator, Git context, UI and export | In this PR (verify implementation checklist) |
-| 2. Incident case UX | saved redacted cases, advanced timeline, trace tree, filters, context navigation | Planned |
-| 3. Real observability integrations | OpenTelemetry local collector, optional Sentry/Grafana connectors, scoped credentials | Planned |
-| 4. Verification | reproducible incident hypotheses and opt-in checks with baseline comparison | Planned |
-| 5. Enterprise hardening | telemetry redaction adversarial QA, remote hosts, cross-OS real E2E, auditability, performance | Planned |
-| 6. Public release | legal naming checks, PNG icon, real screenshots, Marketplace/Open VSX, launch | Not approved |
+| 0 | Identidad, PNG y visual QA | PARTIAL |
+| 1 | Evidence MVP, OTLP JSON, UI, Git y reportes | PARTIAL |
+| 2 | Incident Case Studio e historial migrable | PARTIAL |
+| 3 | Sentry/Grafana opt-in seguros | PARTIAL |
+| 4 | Verificación controlada y causalidad responsable | PARTIAL |
+| 5 | Security, QA, coverage, performance | PARTIAL |
+| 6 | CI, VSIX, captura y aprobación de publicación | PARTIAL |
 
-Do not call the MVP Enterprise-certified. Enterprise AAAAA is an aspiration that requires independently verified engineering and UX evidence, not an unchecked label.
+Las fases se evalúan por DoD, no por documentos o apariencia.

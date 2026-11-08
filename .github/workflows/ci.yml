@@ -1,0 +1,217 @@
+name: Vestigivo RCA PR Verification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'test/**'
+      - 'media/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/publish.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: vestigivo-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    name: Verify (ubuntu-latest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Checkout tested PR candidate
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts --no-fund
+      - name: Compile and run core tests with enforced coverage
+        run: npm run check
+      - name: Select expensive gates by changed paths
+        id: scope
+        shell: bash
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          echo 'host=false' >> "$GITHUB_OUTPUT"
+          echo 'bench=false' >> "$GITHUB_OUTPUT"
+          if [[ -z "$HEAD_SHA" || -z "$BASE_SHA" ]]; then
+            echo 'host=true' >> "$GITHUB_OUTPUT"
+            echo 'bench=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Gate scope against the entire PR, not only its final commit.
+          # A docs-only final commit must never hide earlier core/UI changes.
+          git fetch --no-tags --depth=1 origin "$HEAD_SHA" "$BASE_SHA"
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          if grep -Eq '^(src/extension\.ts|src/ui/|src/adapters/store\.ts|media/control-center\.html|test/host/)' <<< "$changed"; then
+            echo 'host=true' >> "$GITHUB_OUTPUT"
+          fi
+          if grep -Eq '^(src/core/(parser|correlate|report|case)\.ts|scripts/benchmark\.cjs)' <<< "$changed"; then
+            echo 'bench=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Genuine VS Code Extension Development Host smoke (Linux)
+        if: steps.scope.outputs.host == 'true'
+        run: xvfb-run -a npm run test:host
+      - name: Deterministic core benchmarks 1K/10K/100K budget
+        if: steps.scope.outputs.bench == 'true'
+        run: npm run benchmark
+      - name: Upload private benchmark evidence
+        if: steps.scope.outputs.bench == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: vestigivo-core-benchmark
+          path: benchmark-result.json
+          retention-days: 7
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+      - name: Verify original brand PNG alpha and Activity Bar icon
+        run: npm run brand:verify
+      - name: Verify real screenshots and synthetic provenance
+        run: npm run screenshots:verify
+      - name: Package private VSIX without recompiling
+        run: npx vsce package --no-dependencies
+      - name: Record VSIX checksum and package inventory
+        shell: bash
+        run: |
+          sha256sum *.vsix | tee SHA256SUMS
+          unzip -l *.vsix | head -n 70
+      - name: Install actual VSIX into isolated profile and test packaged code (Linux)
+        run: xvfb-run -a npm run test:vsix-host
+      - name: Upload private VSIX candidate (never publish)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: vestigivo-rca-vsix-candidate
+          path: |
+            *.vsix
+            SHA256SUMS
+          retention-days: 7
+
+  compatibility:
+    name: Verify (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    steps:
+      - name: Checkout same PR candidate
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts --no-fund
+      - name: Real OS TypeScript, core and coverage gates
+        run: npm run check
+      - name: Verify brand assets on native filesystem
+        run: npm run brand:verify
+      - name: Package candidate on native OS
+        run: npx vsce package --no-dependencies
+      - name: Record OS-specific package checksum
+        shell: bash
+        run: sha256sum *.vsix
+      # GUI/desktop availability varies across hosted runners.
+      # Capture genuine Extension Host results, but do not claim PASS for skipped environments.
+      - name: Genuine native VS Code Extension Host smoke (blocking)
+        id: native_host
+        run: npm run test:host
+      - name: Report native Extension Host status
+        if: always()
+        shell: bash
+        run: |
+          echo "Native Extension Host outcome: ${{ steps.native_host.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "A failing native Host test blocks release; it is never counted as PASS." >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload private native VSIX candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: vestigivo-native-${{ matrix.os }}-vsix
+          path: '*.vsix'
+          retention-days: 7
+
+  visual-screenshots:
+    name: Capture authentic VS Code screenshots (synthetic fixture)
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == 'Drako01' }}
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout owner PR head; never write to main
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: true
+      - name: Skip if all four genuine screenshots are already versioned
+        id: pictures
+        shell: bash
+        run: |
+          if test -s media/screenshots/01-overview.png &&
+             test -s media/screenshots/02-timeline.png &&
+             test -s media/screenshots/03-trace-tree.png &&
+             test -s media/screenshots/04-case-studio.png; then
+            echo 'capture=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'capture=true' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        if: steps.pictures.outputs.capture == 'true'
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install screenshot tool in ephemeral CI host
+        if: steps.pictures.outputs.capture == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq scrot
+      - name: Compile the actual extension (not a static mockup)
+        if: steps.pictures.outputs.capture == 'true'
+        run: |
+          npm ci --ignore-scripts --no-fund
+          npm run build
+      - name: Run real VS Code Electron and take four screenshots under Xvfb
+        if: steps.pictures.outputs.capture == 'true'
+        env:
+          VESTIGIVO_SCREENSHOT_MODE: '1'
+          VESTIGIVO_SCREENSHOT_DIR: ${{ github.workspace }}/media/screenshots
+        run: xvfb-run -a -s "-screen 0 1440x900x24" npm run test:host
+      - name: Verify screenshot signatures and file sizes
+        if: steps.pictures.outputs.capture == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in media/screenshots/01-overview.png media/screenshots/02-timeline.png media/screenshots/03-trace-tree.png media/screenshots/04-case-studio.png; do
+            test -s "$file"
+            file "$file"
+            grep -q 'PNG image data, 1440 x 900' <(file "$file")
+            test "$(wc -c < "$file")" -ge 15000
+          done
+      - name: Commit only real screenshot files onto owner PR branch
+        if: steps.pictures.outputs.capture == 'true'
+        env:
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$PR_BRANCH" = 'feat/enterprise-aaaaa-incident-intelligence-20261108'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add media/screenshots/01-overview.png media/screenshots/02-timeline.png media/screenshots/03-trace-tree.png media/screenshots/04-case-studio.png
+          git diff --cached --quiet && exit 0
+          git commit -m 'docs(screenshots): real VS Code UI captures using synthetic incident fixture'
+          git push origin "HEAD:refs/heads/$PR_BRANCH"
