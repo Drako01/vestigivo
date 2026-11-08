@@ -64,7 +64,7 @@ test('Case budget is explicit on multi-source import and does not store unbounde
   const first = importIntoCase(createCase(), parseEvidence(data(make('A', 5500)), 'a.jsonl'));
   const second = importIntoCase(first, parseEvidence(data(make('B', 5500)), 'b.jsonl'));
   assert.equal(second.observations.length, 10000);
-  assert.ok(second.limitations.some(s => s.includes('500 records excluded')));
+  assert.ok(second.limitations.some(s => s.includes('1000 records excluded')));
 });
 test('Migration from schema 0 retains observations, sources and audit without inventing findings', () => {
   const imported = importIntoCase(createCase('A historical incident'), parseEvidence(data('{"message":"failure"}'),'a.json'));
