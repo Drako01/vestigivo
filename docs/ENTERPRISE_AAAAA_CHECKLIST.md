@@ -166,3 +166,16 @@ La siguiente sesión debe comenzar por el último run del PR #3 y actualizar est
 - [ ] El workflow de publicación `publish.yml` se agregó **solo en la rama Draft**; OIDC Marketplace y fallback temporal Open VSX PAT se activarán únicamente tras aprobar el merge, con los entornos protegidos y el token configurados por el propietario.
 
 **Fases 0–6: no declaradas completas ni listas para publicación.** Próxima sesión: confirmar el run exacto, actualizar evidencia SHA/PASS/FAIL y continuar las capacidades pendientes del prompt maestro.
+
+
+### Checkpoint — Elección de repositorio público y Open VSX OIDC (2026-11-08)
+
+- [x] Actualizado `.github/workflows/publish.yml`: el job `open-vsx` utiliza `id-token: write`, `ovsx publish --trusted-publishing`, artefacto único con SHA-256 y elimina el uso del secreto `OVSX_PAT`. Marketplace continúa utilizando OIDC sin cambios.
+- [x] Documentación de release, README y changelog alineados con publicación OIDC en ambos registros.
+- [ ] **Confirmar visibilidad `public` de `Drako01/vestigivo` en GitHub**: el propietario comunicó la decisión, pero la última consulta todavía lo mostraba `private`.
+- [ ] Reintentar registro Trusted Publisher en Open VSX: namespace `armotusitio`, repo `Drako01/vestigivo`, workflow `publish.yml`, environment `open-vsx`.
+- [ ] Verificar Environment `open-vsx` con restricciones a `main` y aprobación del propietario. Borrar `OVSX_PAT` si existía una vez activado OIDC.
+- [ ] CI verde sobre último HEAD, incluyendo Host macOS real y nuevos cambios de release; capturas reales del IDE y QA de accesibilidad todavía pendientes.
+- [ ] Continúan sin permiso merge y publicación de `0.1.1` hasta cumplir DoD; PR #3 permanece Draft.
+
+**Nota de continuidad:** el bloque anterior que describe PAT de Open VSX es histórico y quedó **reemplazado por este checkpoint**.
