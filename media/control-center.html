@@ -129,7 +129,7 @@ function filters(container){
     const input=el('input');input.type=inputType;input.value=filter[field];input.placeholder=labelText;
     input.dataset.filter=field;
     input.addEventListener('input',()=>{
-      const offset=input.selectionStart;filter[field]=input.value;timelinePage=0;renderContent();
+      const offset=input.type==='search'?input.selectionStart:null;filter[field]=input.value;timelinePage=0;renderContent();
       const next=$('content').querySelector('input[data-filter="'+field+'"]');
       if(next){next.focus();if(offset!==null&&next.type==='search')next.setSelectionRange(offset,offset)}
     });
