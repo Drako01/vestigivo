@@ -144,7 +144,7 @@ test('Redacted note and authorization header have no retained secret', () => {
 });
 
 test('Oversized Markdown export is rejected rather than silently cut', () => {
-  const logs = Array.from({length: 150}, (_,i) => JSON.stringify({message: 'message'+i+'x'.repeat(14900)})).join('\\n');
+  const logs = Array.from({length: 150}, (_,i) => JSON.stringify({message: 'message'+i+'x'.repeat(14900)})).join('\n');
   const incident = importIntoCase(createCase(),parseEvidence(data(logs),'many.jsonl'));
   assert.throws(() => exportMarkdown(incident), /exceeds.*limit/);
 });
