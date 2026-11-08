@@ -10,17 +10,21 @@ import { proposeHypothesis } from '../core/verification';
 import type { IncidentCase } from '../core/types';
 import { readGitHistory, type GitSnapshot } from '../adapters/git';
 import { CaseStore } from '../adapters/store';
+import { ProviderClient, type ProviderName, type ProviderResult } from '../adapters/providers';
 
 type UiMessage = { type: 'import' | 'exportMarkdown' | 'exportJson' | 'save' | 'open' | 'new' |
   'duplicate' | 'archive' | 'delete' | 'git' | 'settings' | 'refresh' |
-  'note' | 'hypothesis' | 'openSource'; text?: string; observationId?: string };
+  'note' | 'hypothesis' | 'openSource' | 'providerConnect' | 'providerDisconnect' | 'providerFetch';
+  text?: string; observationId?: string; provider?: ProviderName };
 function validMessage(value: unknown): value is UiMessage {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const item = value as Record<string, unknown>;
   return typeof item.type === 'string' &&
     ['import', 'exportMarkdown', 'exportJson', 'save', 'open', 'new', 'duplicate', 'archive', 'delete', 'git',
-      'settings', 'refresh', 'note', 'hypothesis', 'openSource'].includes(item.type) &&
+      'settings', 'refresh', 'note', 'hypothesis', 'openSource',
+      'providerConnect','providerDisconnect','providerFetch'].includes(item.type) &&
     (item.text === undefined || typeof item.text === 'string' && item.text.length <= 2000) &&
+    (item.provider === undefined || item.provider === 'sentry' || item.provider === 'grafana') &&
     (item.observationId === undefined || typeof item.observationId === 'string' && /^[a-f0-9]{24}$/.test(item.observationId));
 }
 export class ControlCenter implements vscode.Disposable {
@@ -32,8 +36,12 @@ export class ControlCenter implements vscode.Disposable {
   private details = '';
   private busy = false;
   private readonly store: CaseStore;
+  private readonly providers: ProviderClient;
+  private connections: Record<ProviderName, boolean> = { sentry: false, grafana: false };
+  private providerResult: ProviderResult | null = null;
   constructor(private readonly context: vscode.ExtensionContext) {
     this.store = new CaseStore(vscode.Uri.joinPath(context.globalStorageUri, 'cases'));
+    this.providers = new ProviderClient(context.secrets);
   }
   async importFromCommand(): Promise<void> { await this.open(); await this.handle({ type: 'import' }); }
   async open(): Promise<void> {
@@ -47,11 +55,13 @@ export class ControlCenter implements vscode.Disposable {
     this.context.subscriptions.push(panel.webview.onDidReceiveMessage(value => void this.handle(value)),
       panel.onDidDispose(() => { this.panel = undefined; }));
     this.send();
+    void this.refreshProviderConnections();
   }
   private send(): void {
     const value = {
       type: 'state', case: this.incident, status: this.status, details: redactText(this.details),
       git: this.git, busy: this.busy, reportPreview: exportMarkdown(this.incident),
+      providers: this.connections, providerResult: this.providerResult,
       language: vscode.workspace.getConfiguration('vestigivo').get<string>('language', 'auto') === 'auto'
         ? (vscode.env.language.toLowerCase().startsWith('es') ? 'es' : 'en')
         : vscode.workspace.getConfiguration('vestigivo').get<string>('language', 'en')
@@ -78,11 +88,78 @@ export class ControlCenter implements vscode.Disposable {
           hypotheses: [...this.incident.hypotheses, proposeHypothesis(redactText(value.text ?? ''))] }; break;
         case 'openSource': await this.openSource(value.observationId); break;
         case 'settings': await vscode.commands.executeCommand('workbench.action.openSettings', 'vestigivo'); break;
-        case 'refresh': break;
+        case 'providerConnect': if (value.provider) await this.connectProvider(value.provider); break;
+        case 'providerDisconnect': if (value.provider) await this.disconnectProvider(value.provider); break;
+        case 'providerFetch': if (value.provider) await this.fetchProvider(value.provider); break;
+        case 'refresh': await this.refreshProviderConnections(); break;
       }
     } catch (error) {
       this.status = 'ERROR'; this.details = error instanceof Error ? error.message : 'Unexpected error.';
     } finally { this.busy = false; this.send(); }
+  }
+  private async refreshProviderConnections(): Promise<void> {
+    for (const name of ['sentry', 'grafana'] as const) {
+      try { this.connections[name] = !!await this.providers.connection(name); }
+      catch { this.connections[name] = false; }
+    }
+    this.send();
+  }
+  private async connectProvider(name: ProviderName): Promise<void> {
+    if (!vscode.workspace.isTrusted) {
+      this.status = 'NO_PERMISSION'; this.details = 'Provider credentials require a trusted workspace.'; return;
+    }
+    const defaultOrigin = name === 'sentry' ? 'https://sentry.io' : 'https://stack.grafana.net';
+    const endpoint = await vscode.window.showInputBox({
+      title: 'Vestigivo RCA: ' + name + ' HTTPS origin', value: defaultOrigin,
+      prompt: 'Only official hosted Sentry / Grafana Cloud origins are accepted. No localhost or private hosts.',
+      ignoreFocusOut: true
+    });
+    if (!endpoint) { this.status = 'CANCELLED'; return; }
+    const organization = name === 'sentry' ? await vscode.window.showInputBox({
+      title: 'Sentry organization slug', prompt: 'Required: organization accessible with event:read scope.',
+      ignoreFocusOut: true
+    }) : undefined;
+    if (name === 'sentry' && !organization) { this.status = 'CANCELLED'; return; }
+    const project = name === 'sentry' ? await vscode.window.showInputBox({
+      title: 'Optional Sentry project slug', prompt: 'Blank means all authorized projects.',
+      ignoreFocusOut: true
+    }) : undefined;
+    const token = await vscode.window.showInputBox({
+      title: 'Vestigivo RCA: ' + name + ' read-only token',
+      prompt: 'Stored only in VS Code SecretStorage. It is never copied into case data or settings.',
+      password: true, ignoreFocusOut: true
+    });
+    if (!token) { this.status = 'CANCELLED'; return; }
+    await this.providers.connect(name, token, { endpoint,
+      ...(organization ? { organization } : {}), ...(project ? { project } : {}) });
+    this.connections[name] = true;
+    this.status = 'COMPLETE';
+    this.details = name + ' configured. No network request has been made.';
+  }
+  private async disconnectProvider(name: ProviderName): Promise<void> {
+    const permission = await vscode.window.showWarningMessage('Delete local ' + name + ' credentials and disable its reads?',
+      { modal: true }, 'Disconnect');
+    if (permission !== 'Disconnect') { this.status = 'CANCELLED'; return; }
+    await this.providers.disconnect(name);
+    this.connections[name] = false;
+    if (this.providerResult?.provider === name) this.providerResult = null;
+    this.details = name + ' credentials removed from SecretStorage.';
+  }
+  private async fetchProvider(name: ProviderName): Promise<void> {
+    if (!vscode.workspace.isTrusted) {
+      this.status = 'NO_PERMISSION'; this.details = 'External provider reads require a trusted workspace.'; return;
+    }
+    const connection = await this.providers.connection(name);
+    if (!connection) { this.status = 'NO_PERMISSION'; this.details = 'Connect ' + name + ' explicitly first.'; return; }
+    const approval = await vscode.window.showWarningMessage(
+      'Send a read-only GET request to ' + connection.endpoint +
+      '? No local source files, code, logs, tokens in URLs or case data will be uploaded.',
+      { modal: true }, 'Read provider');
+    if (approval !== 'Read provider') { this.status = 'CANCELLED'; return; }
+    this.providerResult = await this.providers.list(name);
+    this.status = 'COMPLETE';
+    this.details = name + ' returned ' + this.providerResult.totalReturned +
+      ' records as external context. They are not automatically imported into the case.';
   }
   private async importFiles(): Promise<void> {
     const uris = await vscode.window.showOpenDialog({ canSelectMany: true, canSelectFiles: true, canSelectFolders: false,
