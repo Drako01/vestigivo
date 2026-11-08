@@ -1,0 +1,12 @@
+/* Vestigivo brand tokens — authoring reference, not a forced VS Code theme. */
+:root {
+  --vestigivo-bg: #10151d;
+  --vestigivo-surface: #151e29;
+  --vestigivo-border: #2b3c4f;
+  --vestigivo-text: #e9f1fa;
+  --vestigivo-muted: #afc0d2;
+  --vestigivo-evidence: #4dd6c8;
+  --vestigivo-correlation: #8574e8;
+  --vestigivo-hypothesis: #e6a75b;
+  --vestigivo-danger: #f67880;
+}
