@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { randomUUID } from 'node:crypto';
 import { loadCase } from '../core/case';
 import { redactIncident } from '../core/redact';
 import type { IncidentCase } from '../core/types';
@@ -42,7 +43,14 @@ export class CaseStore {
     const bytes = new TextEncoder().encode(JSON.stringify(safe));
     if (bytes.byteLength > MAX_CASE_BYTES) throw new Error('Case exceeds the 8 MiB persistence budget.');
     await vscode.workspace.fs.createDirectory(this.root);
-    await vscode.workspace.fs.writeFile(this.location(incident.id), bytes);
+    const target = this.location(incident.id);
+    const temporary = vscode.Uri.joinPath(this.root, '.tmp-' + randomUUID() + '.json');
+    try {
+      await vscode.workspace.fs.writeFile(temporary, bytes);
+      await vscode.workspace.fs.rename(temporary, target, { overwrite: true });
+    } finally {
+      try { await vscode.workspace.fs.delete(temporary); } catch { /* already renamed or failed; preserve original error */ }
+    }
   }
   async delete(id: string): Promise<void> {
     await vscode.workspace.fs.delete(this.location(id), { useTrash: false });

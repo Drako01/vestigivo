@@ -1,5 +1,10 @@
 import * as vscode from 'vscode';
 import assert from 'node:assert/strict';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { CaseStore } from '../../../src/adapters/store';
+import { createCase } from '../../../src/core/case';
 async function until(predicate: () => boolean, timeoutMs: number): Promise<boolean> {
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
@@ -20,5 +25,20 @@ export async function run(): Promise<void> {
     group.tabs.some(tab => tab.label.includes('Vestigivo RCA'))), 10000);
   assert.ok(active, 'Control Center not visible as a central editor tab.');
   process.stdout.write('EXTENSION HOST PASS: activated, commands registered and central editor tab visible.\n');
+  const root = vscode.Uri.file(join(tmpdir(), 'vestigivo-host-'+randomUUID()));
+  const store = new CaseStore(root);
+  try {
+    const initial = createCase('Host persistence smoke');
+    await store.save(initial);
+    const opened = await store.read(initial.id);
+    assert.equal(opened.id, initial.id);
+    assert.equal(opened.title, initial.title);
+    assert.equal((await store.list()).length, 1);
+    await store.delete(initial.id);
+    assert.equal((await store.list()).length, 0);
+    process.stdout.write('EXTENSION HOST PASS: atomic local save, reopen, list and explicit deletion.\\n');
+  } finally {
+    try { await vscode.workspace.fs.delete(root, { recursive: true }); } catch { /* isolated fixture best effort */ }
+  }
   // This tests the command and central tab, not a physical Activity Bar click or a rendered screenshot.
 }
