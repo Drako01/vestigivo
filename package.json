@@ -6,28 +6,82 @@
   "publisher": "armotusitio",
   "license": "MIT",
   "private": true,
-  "engines": { "vscode": "^1.96.0" },
-  "categories": ["Other", "Visualization", "Testing"],
-  "keywords": ["incident", "observability", "root cause analysis", "opentelemetry", "logs"],
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Other",
+    "Visualization",
+    "Testing"
+  ],
+  "keywords": [
+    "incident",
+    "observability",
+    "root cause analysis",
+    "opentelemetry",
+    "logs"
+  ],
   "main": "./dist/src/extension.js",
-  "activationEvents": ["onCommand:vestigivo.openControlCenter", "onCommand:vestigivo.importEvidence", "onView:vestigivo.launcher"],
+  "activationEvents": [
+    "onCommand:vestigivo.openControlCenter",
+    "onCommand:vestigivo.importEvidence",
+    "onView:vestigivo.launcher"
+  ],
   "contributes": {
     "commands": [
-      { "command": "vestigivo.openControlCenter", "title": "Vestigivo RCA: Open Control Center" },
-      { "command": "vestigivo.importEvidence", "title": "Vestigivo RCA: Import Evidence" }
+      {
+        "command": "vestigivo.openControlCenter",
+        "title": "Vestigivo RCA: Open Control Center"
+      },
+      {
+        "command": "vestigivo.importEvidence",
+        "title": "Vestigivo RCA: Import Evidence"
+      }
     ],
     "viewsContainers": {
-      "activitybar": [{ "id": "vestigivo", "title": "Vestigivo RCA", "icon": "media/brand/vestigivo-activity-bar.svg" }]
+      "activitybar": [
+        {
+          "id": "vestigivo",
+          "title": "Vestigivo RCA",
+          "icon": "media/brand/vestigivo-activity-bar.svg"
+        }
+      ]
     },
     "views": {
-      "vestigivo": [{ "id": "vestigivo.launcher", "name": "Control Center", "type": "webview" }]
+      "vestigivo": [
+        {
+          "id": "vestigivo.launcher",
+          "name": "Control Center",
+          "type": "webview"
+        }
+      ]
     },
     "configuration": {
       "title": "Vestigivo RCA",
       "properties": {
-        "vestigivo.maxImportBytes": { "type": "integer", "default": 8388608, "minimum": 1024, "maximum": 33554432, "description": "Maximum imported bytes per explicitly selected source." },
-        "vestigivo.maxEvents": { "type": "integer", "default": 10000, "minimum": 1, "maximum": 100000, "description": "Maximum observations per source. Exceeding this limit produces a PARTIAL import." },
-        "vestigivo.language": { "type": "string", "enum": ["auto", "es", "en"], "default": "auto" }
+        "vestigivo.maxImportBytes": {
+          "type": "integer",
+          "default": 8388608,
+          "minimum": 1024,
+          "maximum": 33554432,
+          "description": "Maximum imported bytes per explicitly selected source."
+        },
+        "vestigivo.maxEvents": {
+          "type": "integer",
+          "default": 10000,
+          "minimum": 1,
+          "maximum": 100000,
+          "description": "Maximum observations per source. Exceeding this limit produces a PARTIAL import."
+        },
+        "vestigivo.language": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "es",
+            "en"
+          ],
+          "default": "auto"
+        }
       }
     }
   },
@@ -36,12 +90,16 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test dist/test/*.test.js",
     "package:vsix": "npm run build && vsce package --no-dependencies",
-    "check": "npm run typecheck && npm test"
+    "check": "npm run build && node --test dist/test/*.test.js"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/vscode": "^1.96.0",
     "@vscode/vsce": "^3.2.0",
     "typescript": "^5.7.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Drako01/vestigivo.git"
   }
 }
