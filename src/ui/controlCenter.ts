@@ -35,6 +35,7 @@ export class ControlCenter implements vscode.Disposable {
   constructor(private readonly context: vscode.ExtensionContext) {
     this.store = new CaseStore(vscode.Uri.joinPath(context.globalStorageUri, 'cases'));
   }
+  async importFromCommand(): Promise<void> { await this.open(); await this.handle({ type: 'import' }); }
   async open(): Promise<void> {
     if (this.panel) { this.panel.reveal(vscode.ViewColumn.One); return; }
     this.panel = vscode.window.createWebviewPanel('vestigivo.controlCenter', 'Vestigivo RCA — Control Center',
@@ -50,7 +51,7 @@ export class ControlCenter implements vscode.Disposable {
   private send(): void {
     const value = {
       type: 'state', case: this.incident, status: this.status, details: redactText(this.details),
-      git: this.git, busy: this.busy,
+      git: this.git, busy: this.busy, reportPreview: exportMarkdown(this.incident),
       language: vscode.workspace.getConfiguration('vestigivo').get<string>('language', 'auto') === 'auto'
         ? (vscode.env.language.toLowerCase().startsWith('es') ? 'es' : 'en')
         : vscode.workspace.getConfiguration('vestigivo').get<string>('language', 'en')
