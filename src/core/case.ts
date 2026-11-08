@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { correlate } from './correlate';
 import { redactText, redactIncident } from './redact';
+import { validStoredHypothesis } from './verification';
 import { SCHEMA_VERSION, type IncidentCase, type ImportResult, type Observation, type InvestigatorNote } from './types';
 
 export function createCase(title = 'Untitled investigation', now = new Date().toISOString()): IncidentCase {
@@ -94,9 +95,7 @@ export function loadCase(input: unknown): IncidentCase {
     const h = object(value);
     if (!h || !validText(h.id, 64) || !validText(h.statement, 1000) ||
       !['HYPOTHESIS','CONFIRMED','INCONCLUSIVE'].includes(String(h.state)) ||
-      !Array.isArray(h.supports) || !h.supports.every(v => validText(v, 256)) ||
-      !Array.isArray(h.contradicts) || !h.contradicts.every(v => validText(v, 256)) ||
-      !(h.verification === null || object(h.verification))) throw new Error('Invalid persisted hypothesis.');
+      !validStoredHypothesis(h)) throw new Error('Invalid persisted hypothesis or unsubstantiated verification.');
   }
   for (const value of notes) {
     const n = object(value);
