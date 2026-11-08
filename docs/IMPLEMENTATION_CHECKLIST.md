@@ -1,10 +1,11 @@
-# Vestigivo — implementation checklist (living document)
+# Vestigivo RCA — implementation checklist (living document)
 
 ## Phase 0 — brand and repo
 - [x] Private repository and \`main\` initialized.
 - [x] Feature branch for review.
 - [x] Product vision, evidence contract, security boundaries.
-- [x] Dark/Light logo SVG, monochrome Activity Bar icon, editable moodboard and tokens.
+- [x] Dark/Light Vestigivo RCA logo SVG, monochrome Activity Bar icon, editable moodboard and tokens.
+- [x] Approved public naming: Vestigivo RCA; internal identifier stays vestigivo.
 - [ ] Human visual inspection for tiny icon and production raster assets.
 - [ ] Trademark/name clearance (before public launch).
 

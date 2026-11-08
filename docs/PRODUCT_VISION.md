@@ -1,7 +1,7 @@
-# Product Vision — Vestigivo Incident Intelligence
+# Product Vision — Vestigivo RCA Incident Intelligence
 
 ## Product hypothesis
-When an incident occurs, engineers waste time reconstructing disconnected logs, traces, Git changes and deployments. Vestigivo should create an evidence-backed local incident case, not a second vendor-specific observability dashboard.
+When an incident occurs, engineers waste time reconstructing disconnected logs, traces, Git changes and deployments. Vestigivo RCA should create an evidence-backed local incident case, not a second vendor-specific observability dashboard.
 
 **User persona:** Backend engineers, DevOps engineers, SREs and on-call developers who use VS Code.
 **Core question:** What happened, what changed near that event, what can we actually demonstrate, and what remains uncertain?

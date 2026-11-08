@@ -1,17 +1,23 @@
-# Vestigivo — Brand Identity v1 (working draft)
+# Vestigivo RCA — Brand Identity v1 (working draft)
 
 ## Positioning
-**Name:** Vestigivo
+**Public name:** Vestigivo RCA
+**Technical identifier:** vestigivo (repository, package and command namespace)
+**Acronym:** RCA = Root Cause Analysis; a method of investigation, never a guarantee of automatic causal proof
 **Category:** Developer Tools / Incident Intelligence
 **Tagline:** *Every incident leaves evidence.*
 **Functional promise:** Investigate operational incidents and regressions by connecting observable events, trace context and source changes, without overstating causal certainty.
 **Publisher:** armotusitio · Alejandro Di Stefano · ArmoTuSitio.com.ar
 
+## Naming decision
+
+Keep the GitHub repository `Drako01/vestigivo` and technical identifiers `vestigivo`; market the extension as **Vestigivo RCA**. The descriptor is integral to the public wordmark and Marketplace displayName. Avoid adding RCA to namespace or package IDs. Retain `Every incident leaves evidence.` as the primary slogan. Never interpret the RCA acronym as a product guarantee.
+
 ## Etymology and product personality
 Inspired by Latin **vestigium** (footprint/trace). The ending **-ivo** fits the product family (Indizivo, Orquestivo, Saturivo, Noditrivo). Premium, technical, precise, quiet, evidence-first, trustworthy. This is an original visual direction, not a claim of trademark availability or exclusive usage.
 
 ## Symbol — the convergence lens
-The logo joins three distinct trails into a focal ring. Two descending paths form an abstract V (Vestigivo); small nodes are observable signals and the central lens represents investigation. Teal = observation, violet = correlation, amber = hypothesis. **Never use icon color as a substitute for textual status.**
+The logo joins three distinct trails into a focal ring. Two descending paths form an abstract V (Vestigivo RCA); small nodes are observable signals and the central lens represents investigation. Teal = observation, violet = correlation, amber = hypothesis. **Never use icon color as a substitute for textual status.**
 Assets:
 - media/brand/vestigivo-symbol.svg — standalone square primary icon, dark master.
 - media/brand/vestigivo-activity-bar.svg — single-color 24x24 Activity Bar icon. VS Code decides the actual tint.

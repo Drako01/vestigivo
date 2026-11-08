@@ -1,4 +1,4 @@
-# Engineering Standards — Vestigivo
+# Engineering Standards — Vestigivo RCA
 
 KISS, DRY, YAGNI, SOLID and Clean Code. Modular TypeScript, strict compiler settings, small pure domain functions, explicit boundaries. Evolve additively.
 
