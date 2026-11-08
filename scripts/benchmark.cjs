@@ -61,6 +61,12 @@ try {
 } catch(error) {
   rejection = {...rejection,status:error instanceof EvidenceFormatError?error.code:'UNEXPECTED_ERROR'};
 }
+if (!['SIZE_LIMIT', 'PARTIAL'].includes(rejection.status)) {
+  throw new Error('100K fixture must reject or explicitly truncate against configured budgets.');
+}
+if (results.some(item => item.acceptedRecords !== item.records || item.sourceStatus !== 'COMPLETE')) {
+  throw new Error('1K/10K fixtures must import entirely and deterministically within 8 MiB.');
+}
 const output={
   schemaVersion:1, tool:'Vestigivo RCA deterministic core benchmark',
   type:'synthetic benchmark; not an Extension Host FPS/scroll measurement',

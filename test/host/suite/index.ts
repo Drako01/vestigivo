@@ -40,5 +40,12 @@ export async function run(): Promise<void> {
   } finally {
     try { await vscode.workspace.fs.delete(root, { recursive: true }); } catch { /* isolated fixture best effort */ }
   }
-  // This tests the command and central tab, not a physical Activity Bar click or a rendered screenshot.
+  // Workbench view-container command exercises the Activity Bar's registered target, not a physical mouse click.
+  await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+  await vscode.commands.executeCommand('workbench.view.extension.vestigivo');
+  const reopened = await until(() => vscode.window.tabGroups.all.some(group =>
+    group.tabs.some(tab => tab.label.includes('Vestigivo RCA'))), 10000);
+  assert.ok(reopened, 'Opening Vestigivo Activity Bar container did not create central editor tab.');
+  process.stdout.write('EXTENSION HOST PASS: Activity Bar view-container action opens central Control Center.\n');
+
 }
