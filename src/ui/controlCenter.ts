@@ -7,7 +7,7 @@ import { parseEvidence, EvidenceFormatError } from '../core/parser';
 import { exportMarkdown, exportJson } from '../core/report';
 import { traceTree } from '../core/correlate';
 import { redactText } from '../core/redact';
-import { proposeHypothesis } from '../core/verification';
+import { proposeHypothesis, planVerification, type PlanInput } from '../core/verification';
 import type { IncidentCase } from '../core/types';
 import { readGitHistory, type GitSnapshot } from '../adapters/git';
 import { CaseStore } from '../adapters/store';
@@ -15,16 +15,23 @@ import { ProviderClient, type ProviderName, type ProviderResult } from '../adapt
 
 type UiMessage = { type: 'import' | 'exportMarkdown' | 'exportJson' | 'save' | 'open' | 'new' |
   'duplicate' | 'archive' | 'delete' | 'git' | 'settings' | 'refresh' |
-  'note' | 'hypothesis' | 'openSource' | 'rename' | 'bookmark' | 'compare' | 'providerConnect' | 'providerDisconnect' | 'providerFetch';
-  text?: string; observationId?: string; provider?: ProviderName };
+  'note' | 'hypothesis' | 'verificationPlan' | 'openSource' | 'rename' | 'bookmark' | 'compare' | 'providerConnect' | 'providerDisconnect' | 'providerFetch';
+  text?: string; observationId?: string; hypothesisId?: string; plan?: PlanInput; provider?: ProviderName };
 function validMessage(value: unknown): value is UiMessage {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const item = value as Record<string, unknown>;
   return typeof item.type === 'string' &&
     ['import', 'exportMarkdown', 'exportJson', 'save', 'open', 'new', 'duplicate', 'archive', 'delete', 'git',
-      'settings', 'refresh', 'note', 'hypothesis', 'openSource', 'rename', 'bookmark', 'compare',
+      'settings', 'refresh', 'note', 'hypothesis', 'verificationPlan', 'openSource', 'rename', 'bookmark', 'compare',
       'providerConnect','providerDisconnect','providerFetch'].includes(item.type) &&
     (item.text === undefined || typeof item.text === 'string' && item.text.length <= 2000) &&
+    (item.hypothesisId === undefined || typeof item.hypothesisId === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.hypothesisId)) &&
+    (item.plan === undefined || (typeof item.plan === 'object' && item.plan !== null &&
+      !Array.isArray(item.plan) && ['assertion','testId','preconditions','expectedOutcome','risks','cost']
+      .every(key => typeof (item.plan as Record<string, unknown>)[key] === 'string' &&
+        ((item.plan as Record<string, unknown>)[key] as string).length <= 1000))) &&
+    (item.type !== 'verificationPlan' || (item.hypothesisId !== undefined && item.plan !== undefined)) &&
     (item.provider === undefined || item.provider === 'sentry' || item.provider === 'grafana') &&
     (item.observationId === undefined || typeof item.observationId === 'string' && /^[a-f0-9]{24}$/.test(item.observationId));
 }
@@ -95,6 +102,7 @@ export class ControlCenter implements vscode.Disposable {
         case 'note': this.incident = addNote(this.incident, value.text ?? ''); break;
         case 'hypothesis': this.incident = { ...this.incident,
           hypotheses: [...this.incident.hypotheses, proposeHypothesis(redactText(value.text ?? ''))] }; break;
+        case 'verificationPlan': if (value.hypothesisId && value.plan) this.saveVerificationPlan(value.hypothesisId, value.plan); break;
         case 'openSource': await this.openSource(value.observationId); break;
         case 'bookmark': if (value.observationId) this.incident = toggleBookmark(this.incident, value.observationId); break;
         case 'rename': await this.rename(); break;
@@ -108,6 +116,17 @@ export class ControlCenter implements vscode.Disposable {
     } catch (error) {
       this.status = 'ERROR'; this.details = error instanceof Error ? error.message : 'Unexpected error.';
     } finally { this.busy = false; this.send(); }
+  }
+  private saveVerificationPlan(hypothesisId: string, plan: PlanInput): void {
+    if (!this.incident.hypotheses.some(h => h.id === hypothesisId))
+      throw new Error('Cannot plan verification for an unknown hypothesis.');
+    const at = new Date().toISOString();
+    const hypotheses = this.incident.hypotheses.map(h =>
+      h.id === hypothesisId ? planVerification(h, plan, at) : h);
+    this.incident = { ...this.incident, hypotheses, updatedAt: at,
+      audit: [...this.incident.audit, { at, action: 'verification-planned', detail: hypothesisId }].slice(-500) };
+    this.status = 'COMPLETE';
+    this.details = 'Manual verification plan recorded. No checks were run and no cause was confirmed.';
   }
   private async refreshProviderConnections(): Promise<void> {
     for (const name of ['sentry', 'grafana'] as const) {
