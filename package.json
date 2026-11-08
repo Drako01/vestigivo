@@ -10,7 +10,7 @@
   "categories": ["Other", "Visualization", "Testing"],
   "keywords": ["incident", "observability", "root cause analysis", "opentelemetry", "logs"],
   "main": "./dist/src/extension.js",
-  "activationEvents": ["onCommand:vestigivo.openControlCenter", "onView:vestigivo.launcher"],
+  "activationEvents": ["onCommand:vestigivo.openControlCenter", "onCommand:vestigivo.importEvidence", "onView:vestigivo.launcher"],
   "contributes": {
     "commands": [
       { "command": "vestigivo.openControlCenter", "title": "Vestigivo RCA: Open Control Center" },
