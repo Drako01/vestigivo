@@ -139,3 +139,77 @@ jobs:
           name: vestigivo-native-${{ matrix.os }}-vsix
           path: '*.vsix'
           retention-days: 7
+
+  visual-screenshots:
+    name: Capture authentic VS Code screenshots (synthetic fixture)
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == 'Drako01' }}
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout owner PR head; never write to main
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: true
+      - name: Skip if all four genuine screenshots are already versioned
+        id: pictures
+        shell: bash
+        run: |
+          if test -s media/screenshots/01-overview.png &&
+             test -s media/screenshots/02-timeline.png &&
+             test -s media/screenshots/03-trace-tree.png &&
+             test -s media/screenshots/04-case-studio.png; then
+            echo 'capture=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'capture=true' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        if: steps.pictures.outputs.capture == 'true'
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install screenshot tool in ephemeral CI host
+        if: steps.pictures.outputs.capture == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq scrot
+      - name: Compile the actual extension (not a static mockup)
+        if: steps.pictures.outputs.capture == 'true'
+        run: |
+          npm ci --ignore-scripts --no-fund
+          npm run build
+      - name: Run real VS Code Electron and take four screenshots under Xvfb
+        if: steps.pictures.outputs.capture == 'true'
+        env:
+          VESTIGIVO_SCREENSHOT_MODE: '1'
+          VESTIGIVO_SCREENSHOT_DIR: ${{ github.workspace }}/media/screenshots
+        run: xvfb-run -a -s "-screen 0 1440x900x24" npm run test:host
+      - name: Verify screenshot signatures and file sizes
+        if: steps.pictures.outputs.capture == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in media/screenshots/01-overview.png media/screenshots/02-timeline.png media/screenshots/03-trace-tree.png media/screenshots/04-case-studio.png; do
+            test -s "$file"
+            file "$file"
+            grep -q 'PNG image data, 1440 x 900' <(file "$file")
+            test "$(wc -c < "$file")" -ge 15000
+          done
+      - name: Commit only real screenshot files onto owner PR branch
+        if: steps.pictures.outputs.capture == 'true'
+        env:
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$PR_BRANCH" = 'feat/enterprise-aaaaa-incident-intelligence-20261108'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add media/screenshots/01-overview.png media/screenshots/02-timeline.png media/screenshots/03-trace-tree.png media/screenshots/04-case-studio.png
+          git diff --cached --quiet && exit 0
+          git commit -m 'docs(screenshots): real VS Code UI captures using synthetic incident fixture'
+          git push origin "HEAD:refs/heads/$PR_BRANCH"
