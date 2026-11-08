@@ -22,7 +22,7 @@ Corte 2026-11-08. **NOT READY FOR MERGE / NOT READY FOR PUBLISH**. PR #3 **DRAFT
 | Protección rama | Equivalencia de HEAD validado e integrado no inspeccionada | BLOCKED |
 | Legales y autorización | Clearance formal marca, merge y publish reservados al propietario | OWNER BLOCKED |
 
-**VSIX SHA256**: \`ff721e4c440a28f5ef90531a2a3f937ecba5ed4698024939112a8244e2ca4403\` (run #42499080671).
+**VSIX SHA256**: `ff721e4c440a28f5ef90531a2a3f937ecba5ed4698024939112a8244e2ca4403` (run #42499080671).
 
 **Aceptación por fase:** 0/7 terminadas. No existe estimación verificada del porcentaje total de funcionalidades: no inventar un porcentaje.
 
