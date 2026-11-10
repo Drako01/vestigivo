@@ -40,7 +40,9 @@ export async function run(): Promise<void> {
       ['01-overview.png','overview'],
       ['02-timeline.png','timeline'],
       ['03-trace-tree.png','traces'],
-      ['04-case-studio.png','cases']
+      ['04-case-studio.png','cases'],
+      ['05-evidence-provenance.png','evidence'],
+      ['06-redacted-report.png','report']
     ] as const;
     for (const [name, section] of frames) {
       await vscode.commands.executeCommand('vestigivo.__visualQaTab', section);

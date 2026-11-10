@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { EnvironmentFingerprint, Hypothesis, VerificationResult, VerificationPlan } from './types';
 import { redactText } from './redact';
 export function proposeHypothesis(statement: string, supports: string[] = [], contradicts: string[] = []): Hypothesis {
-  const clean = statement.trim();
+  const clean = redactText(statement.trim());
   if (clean.length < 10 || clean.length > 1000) throw new Error('Hypothesis must be 10–1000 characters.');
   return { id: randomUUID(), statement: clean, supports: [...new Set(supports)], contradicts: [...new Set(contradicts)], state: 'HYPOTHESIS', verification: null };
 }
@@ -69,7 +69,7 @@ export function validStoredHypothesis(input: unknown): boolean {
     const c = v.current as import('./types').EnvironmentFingerprint | null;
     const comparable = !!b && !!c && b.testId === c.testId && b.testId === v.testId &&
       b.inputHash === c.inputHash && b.configHash === c.configHash &&
-      b.environmentHash === c.environmentHash;
+      b.environmentHash === c.environmentHash && b.versionHash !== c.versionHash;
     if (!comparable || !v.baselinePassed || !v.currentFailed ||
         !v.causalIntervention || !v.controlledEnvironment ||
         (v.repeatedCurrentFailures as number) < 2 ||
@@ -114,17 +114,22 @@ export function evaluateVerification(hypothesis: Hypothesis, input: Verification
     input.baseline.testId === input.current.testId && input.testId === input.baseline.testId &&
     input.baseline.inputHash === input.current.inputHash &&
     input.baseline.configHash === input.current.configHash &&
-    input.baseline.environmentHash === input.current.environmentHash;
+    input.baseline.environmentHash === input.current.environmentHash &&
+    input.baseline.versionHash !== input.current.versionHash;
   const confirmed = comparable && input.baselinePassed && input.currentFailed &&
     input.causalIntervention && input.controlledEnvironment &&
     (input.baselineOutcome === undefined || input.baselineOutcome === 'CHECK_PASSED') &&
     (input.currentOutcome === undefined || input.currentOutcome === 'CHECK_FAILED') &&
     Number.isInteger(input.repeatedCurrentFailures) && input.repeatedCurrentFailures >= 2 &&
-    input.assertion.trim().length >= 10 && input.evidenceIds.length > 0;
+    input.repeatedCurrentFailures <= 10000 &&
+    input.assertion.trim().length >= 10 && input.assertion.length <= 1000 &&
+    /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$/.test(input.testId) &&
+    input.evidenceIds.length > 0 && input.evidenceIds.length <= 200 &&
+    input.evidenceIds.every(id => typeof id === 'string' && id.length > 0 && id.length <= 256);
   const result: VerificationResult = {
     id: randomUUID(), hypothesisId: hypothesis.id,
     status: confirmed ? 'CONFIRMED' : 'INCONCLUSIVE',
-    assertion: input.assertion.slice(0, 1000), evidenceIds: [...new Set(input.evidenceIds)],
+    assertion: redactText(input.assertion.slice(0, 1000)), evidenceIds: [...new Set(input.evidenceIds.map(redactText))].slice(0, 200),
     testId: input.testId,
     baseline: input.baseline, current: input.current,
     baselinePassed: input.baselinePassed, currentFailed: input.currentFailed,

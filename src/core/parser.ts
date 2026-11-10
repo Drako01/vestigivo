@@ -29,15 +29,16 @@ function attributeValue(value: unknown, depth = 0): unknown {
     if (name in v) return v[name];
   }
   if (obj(v.arrayValue)) return arr(obj(v.arrayValue)?.values).slice(0, 128).map(x => attributeValue(x, depth + 1));
-  if (obj(v.kvlistValue)) return otlpAttributes(arr(obj(v.kvlistValue)?.values));
+  if (obj(v.kvlistValue)) return otlpAttributes(arr(obj(v.kvlistValue)?.values), depth + 1);
   return null;
 }
-function otlpAttributes(entries: unknown[]): Obj {
-  const result: Obj = {};
+function otlpAttributes(entries: unknown[], depth = 0): Obj {
+  const result: Obj = Object.create(null) as Obj;
+  if (depth > 8) return result;
   for (const entry of entries.slice(0, 128)) {
     const item = obj(entry);
     const key = str(item?.key);
-    if (key) result[key] = attributeValue(item?.value);
+    if (key) result[key] = attributeValue(item?.value, depth + 1);
   }
   return result;
 }
@@ -55,6 +56,16 @@ function time(raw: unknown, nanoseconds: boolean): { iso: string | null; nanos?:
     } catch { return { iso: null, issue: 'Invalid OTLP nanosecond timestamp; no timestamp inferred.' }; }
   }
   if (typeof raw !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/i.test(raw)) return { iso: null, issue: 'Invalid or ambiguous timestamp; time is unknown.' };
+  // Date.parse normalizes impossible dates on some runtimes (e.g. February 30).
+  const parts = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?(Z|[+-]\d{2}:\d{2})$/i.exec(raw);
+  if (!parts) return { iso: null, issue: 'Invalid ISO timestamp; time is unknown.' };
+  const [, year, month, day, hour, minute, second, offset] = parts;
+  const y = Number(year), m = Number(month), d = Number(day);
+  const maxDay = m >= 1 && m <= 12 ? new Date(Date.UTC(y, m, 0)).getUTCDate() : 0;
+  const zone = offset && offset.toUpperCase() !== 'Z' ? offset.slice(1).split(':').map(Number) : [0, 0];
+  if (d < 1 || d > maxDay || Number(hour) > 23 || Number(minute) > 59 ||
+      Number(second) > 59 || (zone[0] ?? 0) > 23 || (zone[1] ?? 0) > 59)
+    return { iso: null, issue: 'Invalid calendar timestamp; time is unknown.' };
   const ms = Date.parse(raw);
   return Number.isFinite(ms) ? { iso: new Date(ms).toISOString() } : { iso: null, issue: 'Invalid ISO timestamp; time is unknown.' };
 }
@@ -97,18 +108,23 @@ export function parseEvidence(bytes: Uint8Array, fileName: string, options: Impo
   const source: EvidenceSource = { id, name: safeName, sha256, byteLength: bytes.byteLength, format: jsonl ? 'jsonl' : 'json', importedAt: options.importedAt ?? new Date().toISOString() };
   const observations: Observation[] = [];
   const issues: string[] = [];
+  let issueCount = 0;
+  const issue = (message: string): void => {
+    issueCount++;
+    if (issues.length < 49) issues.push(message);
+  };
   let exhausted = false;
   let ordinal = 0;
   const ingest = (entry: unknown, context: Context = {}, line?: number): void => {
     if (observations.length >= maxEvents) { exhausted = true; return; }
     const record = obj(entry);
-    if (!record) { issues.push('Skipped non-object evidence record' + (line ? ' at line ' + line : '') + '.'); return; }
+    if (!record) { issue('Skipped non-object evidence record' + (line ? ' at line ' + line : '') + '.'); return; }
     const attributes = Array.isArray(record.attributes) ? otlpAttributes(record.attributes) : (obj(record.attributes) ?? {});
     const resourceAttributes = context.resource && Array.isArray(context.resource.attributes) ? otlpAttributes(context.resource.attributes) : {};
     const mergedAttributes = sanitizeRecord({ ...resourceAttributes, ...attributes });
     const rawTime = record.timeUnixNano ?? record.startTimeUnixNano ?? record.timestamp ?? record.time;
     const t = time(rawTime, record.timeUnixNano !== undefined || record.startTimeUnixNano !== undefined);
-    if (t.issue) issues.push('Observation ' + (ordinal + 1) + ': ' + t.issue);
+    if (t.issue) issue('Observation ' + (ordinal + 1) + ': ' + t.issue);
     const rawSeverity = choose(record.severityText, record.severity, record.level) ?? 'UNKNOWN';
     const severity = /^(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)$/i.test(rawSeverity) ? rawSeverity.toUpperCase() as Severity : 'UNKNOWN';
     const body = obj(record.body);
@@ -179,7 +195,7 @@ export function parseEvidence(bytes: Uint8Array, fileName: string, options: Impo
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i] ?? '';
       if (!line.trim()) continue;
-      if (line.length > maxLineLength) { issues.push('Line ' + (i + 1) + ' exceeds maximum length; skipped.'); continue; }
+      if (line.length > maxLineLength) { issue('Line ' + (i + 1) + ' exceeds maximum length; skipped.'); continue; }
       try {
         depthCheck(line, maxDepth);
         const v: unknown = JSON.parse(line);
@@ -187,7 +203,7 @@ export function parseEvidence(bytes: Uint8Array, fileName: string, options: Impo
         if (!root || !otlp(root)) ingest(v, {}, i + 1);
       } catch (error) {
         if (error instanceof EvidenceFormatError && error.code === 'DEPTH_LIMIT') throw error;
-        issues.push('Line ' + (i + 1) + ': invalid JSON; skipped.');
+        issue('Line ' + (i + 1) + ': invalid JSON; skipped.');
       }
       if (exhausted) break;
     }
@@ -204,9 +220,10 @@ export function parseEvidence(bytes: Uint8Array, fileName: string, options: Impo
     } else if (data && ['message', 'msg', 'body', 'timestamp', 'time', 'traceId'].some(k => k in data)) ingest(data);
     else throw new EvidenceFormatError('UNSUPPORTED', 'JSON shape is unsupported: expected events/logs, an array, a record, or OTLP JSON.');
   }
-  if (exhausted) issues.push('Event budget reached (' + maxEvents + '); evidence was truncated.');
+  if (exhausted) issue('Event budget reached (' + maxEvents + '); evidence was truncated.');
+  if (issueCount > issues.length) issues.push((issueCount - issues.length) + ' additional import issues not listed.');
   if (observations.length === 0) {
     throw new EvidenceFormatError('FORMAT', 'No supported observations in selected file. ' + issues.slice(0, 2).join(' '));
   }
-  return { source, observations, status: issues.length ? 'PARTIAL' : 'COMPLETE', issues: issues.slice(0, 50) };
+  return { source, observations, status: issueCount ? 'PARTIAL' : 'COMPLETE', issues };
 }

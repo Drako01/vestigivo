@@ -8,8 +8,8 @@ const workflow = readFileSync(resolve(root, '.github/workflows/publish.yml'), 'u
 const manifest = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')) as {version:string, publisher:string, name:string};
 const lock = JSON.parse(readFileSync(resolve(root, 'package-lock.json'), 'utf8')) as {version:string, packages:Record<string,{version:string}>};
 
-test('0.1.2 release manifest and root lockfile agree', () => {
-  assert.equal(manifest.version, '0.1.2');
+test('0.2.0 release manifest and root lockfile agree', () => {
+  assert.equal(manifest.version, '0.2.0');
   assert.equal(lock.version, manifest.version);
   assert.equal(lock.packages['']?.version, manifest.version);
   assert.equal(manifest.publisher, 'armotusitio');

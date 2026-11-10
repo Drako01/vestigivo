@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createCase, importIntoCase, addNote, duplicateCase, compareCases, renameCase, toggleBookmark, type Comparison } from '../core/case';
@@ -59,10 +59,16 @@ export class ControlCenter implements vscode.Disposable {
       vscode.ViewColumn.One, { enableScripts: true, retainContextWhenHidden: true, localResourceRoots: [] });
     const panel = this.panel;
     const nonce = randomBytes(24).toString('base64');
-    const html = await readFile(join(this.context.extensionPath, 'media', 'control-center.html'), 'utf8');
-    panel.webview.html = html.replaceAll('__NONCE__', nonce).replaceAll('__CSP_SOURCE__', panel.webview.cspSource);
-    this.context.subscriptions.push(panel.webview.onDidReceiveMessage(value => void this.handle(value)),
-      panel.onDidDispose(() => { this.panel = undefined; }));
+    try {
+      const html = await readFile(join(this.context.extensionPath, 'media', 'control-center.html'), 'utf8');
+      panel.webview.html = html.replaceAll('__NONCE__', nonce).replaceAll('__CSP_SOURCE__', panel.webview.cspSource);
+    } catch (error) {
+      this.panel = undefined;
+      panel.dispose();
+      throw error;
+    }
+    const messages = panel.webview.onDidReceiveMessage(value => void this.handle(value));
+    panel.onDidDispose(() => { messages.dispose(); this.panel = undefined; });
     this.send();
     void this.refreshProviderConnections();
   }
@@ -159,7 +165,7 @@ export class ControlCenter implements vscode.Disposable {
   async navigateVisualQa(section: string): Promise<void> {
     if (this.context.extensionMode === vscode.ExtensionMode.Production ||
         process.env.VESTIGIVO_SCREENSHOT_MODE !== '1' ||
-        !['overview','timeline','traces','cases'].includes(section))
+        !['overview','timeline','traces','cases','evidence','report'].includes(section))
       throw new Error('Invalid visual QA navigation.');
     await this.panel?.webview.postMessage({ type: 'visualQaNavigate', section });
   }
@@ -232,27 +238,43 @@ export class ControlCenter implements vscode.Disposable {
       openLabel: 'Import selected evidence locally', filters: { 'JSON / JSONL / structured logs': ['json', 'jsonl', 'ndjson', 'log'] } });
     if (!uris?.length) { this.status = 'CANCELLED'; return; }
     if (uris.length > 5) throw Error('Import at most five files at a time.');
+    this.details = '';
     const config = vscode.workspace.getConfiguration('vestigivo');
     const maxBytes = config.get<number>('maxImportBytes', 8 * 1024 * 1024);
     const maxEvents = config.get<number>('maxEvents', 10000);
-    let count = 0, partial = false;
+    let accepted = 0, partial = false;
+    const problems: string[] = [];
+    const safeError = (error: unknown): string => error instanceof Error ? redactText(error.message) : 'Unknown import error.';
     await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification,
       title: 'Vestigivo RCA: importing local evidence', cancellable: true }, async (progress, cancellation) => {
       for (const uri of uris) {
         if (cancellation.isCancellationRequested) { partial = true; this.status = 'CANCELLED'; break; }
-        const stat = await vscode.workspace.fs.stat(uri);
-        if (stat.size > maxBytes) { partial = true; this.details = 'Skipped ' + uri.path + ': exceeds byte budget.'; continue; }
-        const data = await vscode.workspace.fs.readFile(uri);
-        const parsed = parseEvidence(data, uri.path, { maxBytes, maxEvents });
-        this.incident = importIntoCase(this.incident, parsed);
-        this.sourceUris.set(parsed.source.id, uri);
-        count += parsed.observations.length;
-        if (parsed.status === 'PARTIAL') partial = true;
-        progress.report({ message: parsed.source.name, increment: Math.floor(100 / uris.length) });
+        try {
+          const stat = await vscode.workspace.fs.stat(uri);
+          if (stat.size > maxBytes) throw new EvidenceFormatError('SIZE_LIMIT', 'Source exceeds byte budget.');
+          const data = await vscode.workspace.fs.readFile(uri);
+          const parsed = parseEvidence(data, uri.path, { maxBytes, maxEvents });
+          const existing = new Set(this.incident.observations.map(item => item.id));
+          const newEvidence = parsed.observations.filter(item => !existing.has(item.id)).length;
+          const before = this.incident.observations.length;
+          this.incident = importIntoCase(this.incident, parsed);
+          const actual = this.incident.observations.length - before;
+          accepted += actual;
+          if (parsed.status === 'PARTIAL' || newEvidence > actual) partial = true;
+          this.sourceUris.set(parsed.source.id, uri);
+          if (parsed.status === 'PARTIAL') problems.push(parsed.source.name + ': partial source (' + parsed.issues.length + ' diagnostics).');
+          if (newEvidence > actual) problems.push(parsed.source.name + ': ' + (newEvidence - actual) + ' observations exceeded case budget.');
+          progress.report({ message: parsed.source.name, increment: Math.floor(100 / uris.length) });
+        } catch (error) {
+          partial = true;
+          problems.push(redactText(uri.path.split('/').pop() ?? 'selected source') + ': ' + safeError(error));
+        }
       }
     });
-    if (this.status !== 'CANCELLED') this.status = partial ? 'PARTIAL' : 'COMPLETE';
-    this.details = 'Imported ' + count + ' observations. No external upload performed. ' + (this.details || '');
+    if (this.status !== 'CANCELLED') this.status = partial ? (accepted ? 'PARTIAL' : 'ERROR') : 'COMPLETE';
+    this.details = 'Added ' + accepted + ' new observations. No external upload performed.' +
+      (problems.length ? ' ' + problems.slice(0, 5).join(' ') : '');
+
   }
   private async exportReport(format: 'md' | 'json'): Promise<void> {
     const destination = await vscode.window.showSaveDialog({ saveLabel: 'Export redacted report',
@@ -329,6 +351,11 @@ export class ControlCenter implements vscode.Disposable {
     if (!observation) return;
     const uri = this.sourceUris.get(observation.provenance.sourceId);
     if (!uri) { this.details = 'Original source is not available in this session. Re-import explicitly.'; return; }
+    const source = this.incident.sources.find(item => item.id === observation.provenance.sourceId);
+    if (!source) throw new Error('Original evidence fingerprint is missing.');
+    const currentBytes = await vscode.workspace.fs.readFile(uri);
+    if (createHash('sha256').update(currentBytes).digest('hex') !== source.sha256)
+      throw new Error('Original source changed since import. Re-import to establish new provenance.');
     const document = await vscode.workspace.openTextDocument(uri);
     const editor = await vscode.window.showTextDocument(document, { preview: true });
     if (observation.provenance.line) {
