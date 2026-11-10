@@ -42,7 +42,7 @@ test('Nested OTLP attributes with prototype-like keys remain inert and bounded',
   const result = parse(data);
   assert.equal(({} as Record<string, unknown>).polluted, undefined);
   assert.equal(Object.hasOwn(result.observations[0]!.attributes,'__proto__'),true);
-  assert.equal(JSON.stringify(result.observations[0]!.attributes).includes('TRUNCATED DEPTH'),false);
+  assert.equal(JSON.stringify(result.observations[0]!.attributes).includes('TRUNCATED DEPTH'),true);
 });
 
 test('Stored case rejects duplicate observations, disconnected provenance and invalid bookmarks', () => {
