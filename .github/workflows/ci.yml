@@ -157,14 +157,16 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 1
           persist-credentials: true
-      - name: Skip if all four genuine screenshots are already versioned
+      - name: Skip if all six genuine screenshots are already versioned
         id: pictures
         shell: bash
         run: |
           if test -s media/screenshots/01-overview.png &&
              test -s media/screenshots/02-timeline.png &&
              test -s media/screenshots/03-trace-tree.png &&
-             test -s media/screenshots/04-case-studio.png; then
+             test -s media/screenshots/04-case-studio.png &&
+             test -s media/screenshots/05-evidence-provenance.png &&
+             test -s media/screenshots/06-redacted-report.png; then
             echo 'capture=false' >> "$GITHUB_OUTPUT"
           else
             echo 'capture=true' >> "$GITHUB_OUTPUT"
@@ -195,7 +197,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for file in media/screenshots/01-overview.png media/screenshots/02-timeline.png media/screenshots/03-trace-tree.png media/screenshots/04-case-studio.png; do
+          for file in media/screenshots/01-overview.png media/screenshots/02-timeline.png media/screenshots/03-trace-tree.png media/screenshots/04-case-studio.png media/screenshots/05-evidence-provenance.png media/screenshots/06-redacted-report.png; do
             test -s "$file"
             file "$file"
             grep -q 'PNG image data, 1440 x 900' <(file "$file")
@@ -208,10 +210,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$PR_BRANCH" = 'feat/enterprise-aaaaa-incident-intelligence-20261108'
+          test "$PR_BRANCH" = 'feat/audit-hardening-v0.2.0'
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add media/screenshots/01-overview.png media/screenshots/02-timeline.png media/screenshots/03-trace-tree.png media/screenshots/04-case-studio.png
+          git add media/screenshots/01-overview.png media/screenshots/02-timeline.png media/screenshots/03-trace-tree.png media/screenshots/04-case-studio.png media/screenshots/05-evidence-provenance.png media/screenshots/06-redacted-report.png
           git diff --cached --quiet && exit 0
           git commit -m 'docs(screenshots): real VS Code UI captures using synthetic incident fixture'
           git push origin "HEAD:refs/heads/$PR_BRANCH"
