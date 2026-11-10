@@ -58,27 +58,34 @@ export function traceTree(observations: readonly Observation[]): TraceNode[] {
     bucket.push(o);
     grouped.set(k, bucket);
   }
-  return spans.map(observation => {
-    let missingParent = false;
-    let ambiguousParent = false;
-    let cycleDetected = false;
-    let cursor = observation;
-    const visited = new Set<string>([key(observation.traceId!, observation.spanId!)]);
-    for (let count = 0; count <= spans.length; count++) {
+  type Flags = Pick<TraceNode, 'missingParent' | 'ambiguousParent' | 'cycleDetected'>;
+  const clean: Flags = { missingParent: false, ambiguousParent: false, cycleDetected: false };
+  const memo = new Map<string, Flags>();
+  const inspect = (start: Observation): Flags => {
+    const visited = new Set<string>();
+    const path: string[] = [];
+    let cursor = start;
+    let flags = clean;
+    for (;;) {
+      const currentKey = key(cursor.traceId!, cursor.spanId!);
+      if (visited.has(currentKey)) { flags = { ...clean, cycleDetected: true }; break; }
+      const cached = memo.get(currentKey);
+      if (cached) { flags = cached; break; }
+      visited.add(currentKey);
+      path.push(currentKey);
       if (!cursor.parentSpanId) break;
-      const k = key(cursor.traceId!, cursor.parentSpanId);
-      const parents = grouped.get(k) ?? [];
-      if (parents.length === 0) { missingParent = true; break; }
-      if (parents.length !== 1) { ambiguousParent = true; break; }
-      if (visited.has(k)) { cycleDetected = true; break; }
-      visited.add(k);
-      const parent = parents[0];
-      if (!parent) break;
-      cursor = parent;
+      const parents = grouped.get(key(cursor.traceId!, cursor.parentSpanId)) ?? [];
+      if (parents.length === 0) { flags = { ...clean, missingParent: true }; break; }
+      if (parents.length !== 1) { flags = { ...clean, ambiguousParent: true }; break; }
+      cursor = parents[0]!;
     }
-    return {
-      observation, parentId: observation.parentSpanId ?? null,
-      missingParent, ambiguousParent, cycleDetected
-    };
-  });
+    // Memoize only unique span IDs: duplicated IDs can have different parents.
+    for (const k of path) if (grouped.get(k)?.length === 1) memo.set(k, flags);
+    return flags;
+  };
+  return spans.map(observation => ({
+    observation,
+    parentId: observation.parentSpanId ?? null,
+    ...inspect(observation)
+  }));
 }
