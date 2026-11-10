@@ -13,17 +13,25 @@ export function createCase(title = 'Untitled investigation', now = new Date().to
   };
 }
 export function importIntoCase(existing: IncidentCase, added: ImportResult, now = new Date().toISOString()): IncidentCase {
+  const source = existing.sources.find(s => s.id === added.source.id);
+  if (source && source.sha256 !== added.source.sha256)
+    throw new Error('Evidence source fingerprint collision; import refused.');
+  if (!source && existing.sources.length >= 100)
+    throw new Error('Case source budget (100) reached; import refused without changing the case.');
   const old = new Map<string, Observation>(existing.observations.map(o => [o.id, o]));
   let excluded = 0;
   for (const item of added.observations) {
-    if (old.has(item.id) || old.size < 10000) old.set(item.id, item);
+    if (old.has(item.id)) continue; // Stable evidence is immutable on repeat import.
+    if (old.size < 10000) old.set(item.id, item);
     else excluded++;
   }
   const sources = [...existing.sources.filter(s => s.id !== added.source.id), added.source];
   const observations = [...old.values()];
   return {
     ...existing, sources, observations, correlations: correlate(observations), updatedAt: now,
-    audit: [...existing.audit, { at: now, action: 'evidence-imported', detail: added.source.name + ' (' + added.status + ')' }].slice(-500),
+    audit: [...existing.audit, { at: now, action: 'evidence-imported',
+      detail: added.source.name + ' (' + (added.status === 'PARTIAL' || excluded ? 'PARTIAL' : 'COMPLETE') +
+        '; accepted ' + (observations.length - existing.observations.length) + ', excluded ' + excluded + ')' }].slice(-500),
     limitations: [...new Set([...existing.limitations, ...added.issues,
       ...(excluded ? ['Case observation budget (10,000) reached: ' + excluded + ' records excluded, not silently accepted.'] : [])])].slice(0, 100)
   };
@@ -35,7 +43,7 @@ export function addNote(existing: IncidentCase, text: string, now = new Date().t
     audit: [...existing.audit, { at: now, action: 'note-added', detail: note.id }].slice(-500) };
 }
 export function duplicateCase(existing: IncidentCase, now = new Date().toISOString()): IncidentCase {
-  return { ...existing, id: randomUUID(), title: existing.title + ' (copy)', createdAt: now, updatedAt: now,
+  return { ...existing, id: randomUUID(), title: existing.title.slice(0, 173) + ' (copy)', createdAt: now, updatedAt: now,
     audit: [{ at: now, action: 'case-duplicated', detail: existing.id }] };
 }
 /** Accept only the known schema versions; every persisted boundary is untrusted. */
@@ -75,6 +83,13 @@ export function loadCase(input: unknown): IncidentCase {
         !Number.isSafeInteger(s.byteLength) || Number(s.byteLength) < 0)
       throw new Error('Invalid evidence source.');
   }
+  const sourceIds = new Set<string>();
+  for (const value of sources) {
+    const s = value as Record<string, unknown>;
+    if (sourceIds.has(s.id as string)) throw new Error('Duplicate evidence source ID.');
+    sourceIds.add(s.id as string);
+  }
+  const observationIds = new Set<string>();
   for (const value of observations) {
     const o = object(value), p = object(o?.provenance);
     if (!o || !validText(o.id, 24) || !/^[a-f0-9]{24}$/.test(o.id) ||
@@ -85,12 +100,19 @@ export function loadCase(input: unknown): IncidentCase {
         !(o.timestamp === null || validText(o.timestamp, 64)) ||
         !['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL', 'UNKNOWN'].includes(String(o.severity)) ||
         !object(o.attributes) || !p || !validText(p.sourceId, 64) ||
-        !validText(p.importId, 64) || !Number.isSafeInteger(p.ordinal) || Number(p.ordinal) < 0)
+        !validText(p.importId, 64) || !Number.isSafeInteger(p.ordinal) || Number(p.ordinal) < 0 ||
+        !sourceIds.has(p.sourceId) || p.importId !== p.sourceId ||
+        (p.line !== undefined && (!Number.isSafeInteger(p.line) || Number(p.line) < 1)) ||
+        (p.rawTimestamp !== undefined && !validText(p.rawTimestamp, 2000)))
       throw new Error('Invalid observation: persisted evidence is untrusted.');
     for (const key of ['traceId', 'spanId', 'parentSpanId', 'requestId', 'timestampNanoseconds']) {
       if (o[key] !== undefined && !validText(o[key], 512)) throw new Error('Invalid evidence identifier.');
     }
+    if (observationIds.has(o.id)) throw new Error('Duplicate observation ID.');
+    observationIds.add(o.id);
   }
+  if (!bookmarks.every(id => observationIds.has(id)))
+    throw new Error('Bookmark refers to evidence absent from this case.');
   for (const value of hypotheses) {
     const h = object(value);
     if (!h || !validText(h.id, 64) || !validText(h.statement, 1000) ||
