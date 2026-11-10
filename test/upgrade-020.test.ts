@@ -39,7 +39,8 @@ test('Nested OTLP attributes with prototype-like keys remain inert and bounded',
       {key:'deep',value:nested(20)}
     ]
   }]}]}]};
-  const result = parse(data);
+  assert.throws(() => parse(data), /JSON nesting depth exceeded \(40\)/);
+  const result = parseEvidence(bytes(JSON.stringify(data)), 'source.json', { maxDepth: 128 });
   assert.equal(({} as Record<string, unknown>).polluted, undefined);
   assert.equal(Object.hasOwn(result.observations[0]!.attributes,'__proto__'),true);
   assert.equal(JSON.stringify(result.observations[0]!.attributes).includes('TRUNCATED DEPTH'),true);
