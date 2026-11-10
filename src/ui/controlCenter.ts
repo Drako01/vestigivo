@@ -165,7 +165,7 @@ export class ControlCenter implements vscode.Disposable {
   async navigateVisualQa(section: string): Promise<void> {
     if (this.context.extensionMode === vscode.ExtensionMode.Production ||
         process.env.VESTIGIVO_SCREENSHOT_MODE !== '1' ||
-        !['overview','timeline','traces','cases'].includes(section))
+        !['overview','timeline','traces','cases','evidence','report'].includes(section))
       throw new Error('Invalid visual QA navigation.');
     await this.panel?.webview.postMessage({ type: 'visualQaNavigate', section });
   }
