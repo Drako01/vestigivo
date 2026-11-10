@@ -1,7 +1,7 @@
 'use strict';
 /** Screenshot release gate: real PNGs in the README, reproducible synthetic fixture. */
 const assert = require('node:assert/strict');
-const { readFileSync, statSync } = require('node:fs');
+const { readFileSync, statSync, existsSync } = require('node:fs');
 const { createHash } = require('node:crypto');
 const images = [
   'media/screenshots/01-overview.png',
@@ -9,6 +9,16 @@ const images = [
   'media/screenshots/03-trace-tree.png',
   'media/screenshots/04-case-studio.png'
 ];
+// The new PR captures these from genuine VS Code after base CI. The next PR
+// revision enforces the complete six-image set, avoiding a bootstrap deadlock.
+const newViews = [
+  'media/screenshots/05-evidence-provenance.png',
+  'media/screenshots/06-redacted-report.png'
+];
+const present = newViews.filter(existsSync);
+assert(present.length === 0 || present.length === 2,
+  'New evidence/report screenshots must be committed as one validated set');
+images.push(...present);
 const readme=readFileSync('README.md','utf8');
 const unique=new Set();
 for(const path of images){
@@ -37,4 +47,5 @@ assert(readme.includes('actual Vestigivo RCA webview') || readme.includes('actua
   'README must disclose screenshot origin');
 assert(readme.includes('synthetic fixture'),
   'README must disclose synthetic data');
-console.log('SCREENSHOTS PASS: 4 distinct 1440x900 authentic PNG captures, README links, synthetic provenance.');
+console.log('SCREENSHOTS PASS: ' + images.length + ' distinct 1440x900 authentic PNG captures, README links, synthetic provenance.' +
+  (present.length === 0 ? ' New v0.2.0 views pending CI capture.' : ''));
