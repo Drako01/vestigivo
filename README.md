@@ -21,9 +21,23 @@
   <img src="media/screenshots/01-overview.png" alt="Actual Vestigivo RCA Control Center inside Visual Studio Code, with synthetic checkout incident evidence and investigation metrics" width="100%">
 </p>
 
-<p align="center"><sub>Actual Visual Studio Code screenshot · Vestigivo RCA 0.1.1 candidate · fully synthetic demonstration data</sub></p>
+<p align="center"><sub>Actual Visual Studio Code UI · v0.2.0 refresh via CI · fully synthetic demonstration data</sub></p>
 
 Vestigivo RCA brings together logs, distributed traces, exact-identifier correlations and investigator notes in a single Control Center inside the editor. It preserves the separation between **what was observed**, **what was correlated**, **what is still a hypothesis** and **what an explicitly controlled check can establish**.
+
+## What's new in v0.2.0
+
+The 0.2.0 upgrade focuses on **evidence integrity, reliability and defensible root-cause analysis**, preserving the existing interaction model.
+
+- **Safer evidence parsing:** invalid calendar timestamps remain unknown, hostile JSONL diagnostics have a fixed memory budget, and nested OTLP attributes cannot manipulate object prototypes.
+- **Case consistency:** duplicate observations, dangling provenance links and invalid bookmarks are rejected when reopening stored cases. Re-importing the same evidence cannot silently rewrite an existing observation.
+- **Transparent import results:** the UI distinguishes accepted observations from excluded records and reports partial failures without discarding successful earlier file imports.
+- **Stronger causal assertions:** `CONFIRMED` requires distinct baseline/current version fingerprints; a self-reported intervention alone is insufficient.
+- **Faster trace analysis:** iterative, memoized ancestry resolution handles deep trace chains without recursive stack overflow.
+- **Provider and source safety:** restored credentials are revalidated; opening a source requires its current SHA-256 to match the imported fingerprint.
+- **Expanded visual verification:** the six-view screenshot workflow now includes the Evidence provenance and redacted Report panels alongside existing investigation views.
+
+These safeguards are covered by targeted regression tests. A passing CI run verifies its executed gates; it does not constitute a security certification or production-wide benchmark.
 
 ## Why Vestigivo?
 
@@ -31,7 +45,7 @@ Incidents often involve several services, timestamps with differing precision, i
 
 Vestigivo turns selected evidence into a **traceable, bounded investigation**. It records where each observation came from and explicitly marks missing or ambiguous information. It never performs automatic remediation, uploads local logs or claims that correlation proves causation.
 
-## Current capabilities (0.1.2)
+## Current capabilities (0.2.0)
 
 | Area | What it does |
 | --- | --- |
@@ -57,25 +71,43 @@ To try a local investigation, choose **Import evidence**, select up to five supp
 
 ### Explore the investigation workspace
 
-All four screenshots below were captured from **the actual Vestigivo RCA webview running inside the Visual Studio Code Extension Development Host** on Linux, not redrawn or visually simulated. The incident is a **clearly labeled synthetic fixture**, parsed through the same evidence pipeline as local files. No real customer logs, tokens or incident data were used.
+The screenshots below were captured from **the actual Vestigivo RCA webview running inside the Visual Studio Code Extension Development Host** on Linux, not redrawn or visually simulated. The incident is a **clearly labeled synthetic fixture**, parsed through the same evidence pipeline as local files. No real customer logs, tokens or incident data were used.
 
-#### 01 — Timeline: search, filter and inspect
+#### 01 — Overview: consolidated incident evidence
+
+The central workspace shows observation, source, correlation and verification counts without presenting inferred causes as facts.
+
+![Vestigivo RCA Overview with synthetic investigation metrics in the central VS Code editor](media/screenshots/01-overview.png)
+
+#### 02 — Timeline: search, filter and inspect
 
 Use exact trace/request identifiers, UTC date ranges, service and severity filters. Records retain source provenance and missing timestamps are not invented.
 
 ![Vestigivo RCA Timeline showing real UI rendering, filters and synthetic example observations inside VS Code](media/screenshots/02-timeline.png)
 
-#### 02 — Trace Tree: follow observed relationships
+#### 03 — Trace Tree: follow observed relationships
 
 Explore span ancestry and inspect what is known, missing or ambiguous. Shared trace identifiers do **not** establish causation.
 
 ![Vestigivo RCA Trace Tree in VS Code showing synthetic spans and evidence-derived relationships](media/screenshots/03-trace-tree.png)
 
-#### 03 — Case Studio: build an evidence-backed investigation
+#### 04 — Case Studio: build an evidence-backed investigation
 
 Create and manage hypotheses, add notes, bookmark observations and document **manual verification plans**. A proposed explanation does not become a verified finding merely because it is recorded.
 
 ![Vestigivo RCA Case Studio in VS Code displaying a synthetic incident and a manual verification plan](media/screenshots/04-case-studio.png)
+
+#### 05 — Evidence: fingerprint and provenance
+
+Inspect the SHA-256 of every imported source, its format, size and per-observation provenance. If the original file changes after import, opening it requires re-import to prevent mistaken attribution.
+
+![Vestigivo RCA Evidence panel showing actual VS Code UI and synthetic provenance records](media/screenshots/05-evidence-provenance.png)
+
+#### 06 — Report: inspect the redacted export
+
+Preview what is known and unknown before exporting JSON or Markdown; preview limits are explicitly stated.
+
+![Vestigivo RCA Report panel in actual VS Code showing a redacted synthetic case export preview](media/screenshots/06-redacted-report.png)
 
 <sub>Capture provenance: `media/screenshots/` · genuine Linux VS Code Electron/Xvfb screenshots, 1440 × 900, generated by the reproducible visual QA harness. The synthetic JSONL fixture is at `test/fixtures/visual-demo.jsonl`. See the [technical checklist](docs/ENTERPRISE_AAAAA_CHECKLIST.md).</sub>
 
@@ -99,11 +131,11 @@ A verification plan with status `PLANNED` is **not** a test execution. Baseline/
 - **Storage:** cases are ephemeral until explicitly saved. Saved cases are not encrypted by Vestigivo; OS/VS Code protections apply.
 - **No remediation:** never executes a captured command, changes a repository or deploys infrastructure to resolve an incident.
 
-See [Threat Model](docs/THREAT_MODEL.md), [Architecture](docs/ARCHITECTURE.md) and [Acceptance Evidence](docs/ACCEPTANCE_EVIDENCE.md).
+See [Threat Model](docs/THREAT_MODEL.md), [Architecture](docs/ARCHITECTURE.md), [Acceptance Evidence](docs/ACCEPTANCE_EVIDENCE.md) and the [v0.2.0 technical audit](docs/AUDITORIA_TECNICA_V0.2.0.md).
 
 ## Supported inputs and known limitations
 
-JSON-based logs and OTLP JSON are supported. **OTLP/gRPC Protobuf, a local OTLP collector, streaming imports, automated verification execution and broad causal inference are not implemented.** Timestamp ambiguity remains explicit. Source limits default to 8 MiB per file and 10,000 observations per case.
+JSON-based logs and OTLP JSON are supported. **OTLP/gRPC Protobuf, a local OTLP collector, streaming imports, automated verification execution and broad causal inference are not implemented.** Timestamp ambiguity remains explicit. Source limits default to 8 MiB per file and 10,000 observations per case. Additional observations beyond the case limit are explicitly reported as excluded rather than silently accepted.
 
 Core tests, packaging and genuine Extension Host smoke now pass on Linux, Windows and macOS. WSL, SSH, Dev Containers, in-depth graphical accessibility audits and live cloud-provider checks remain [release gates](docs/RELEASE_READINESS.md); do not infer certification from a passing unit test.
 
@@ -121,7 +153,7 @@ npm run package:vsix       # vestigivo-<version>.vsix
 
 For a genuine Extension Development Host on a graphical environment, build first and run `npm run test:host`. On Linux CI, `xvfb-run -a npm run test:vsix-host` tests the installed VSIX bytes in an isolated profile.
 
-**Release policy:** `0.1.0` was bootstrapped manually and `0.1.1` was published via Trusted Publishing. `0.1.2` is the next candidate, adding a GitHub Release alongside Marketplace and Open VSX. Pull requests execute validation; only an approved, version-bumping merge into `main` may initiate automated publishing. The repository visibility is controlled separately by the owner; publishing does not change it. See [GitHub Releases](https://github.com/Drako01/vestigivo/releases), [Release Readiness](docs/RELEASE_READINESS.md), [Release Setup](docs/RELEASE_SETUP.md), [Master Specification](docs/VESTIGIVO_RCA_PROMPT_MAESTRO_ENTERPRISE_AAAAA.md) and [Technical Checklist](docs/ENTERPRISE_AAAAA_CHECKLIST.md).
+**Release policy:** `0.1.0` was bootstrapped manually, `0.1.1` introduced Trusted Publishing and `0.1.2` added the immutable GitHub Release. `0.2.0` is the evidence-integrity upgrade candidate. It is **not published until** the owner merges a successfully verified PR into `main`. Pull requests execute validation; only an approved, version-bumping merge into `main` may initiate automated publishing. The repository visibility is controlled separately by the owner; publishing does not change it. See [GitHub Releases](https://github.com/Drako01/vestigivo/releases), [Release Readiness](docs/RELEASE_READINESS.md), [Release Setup](docs/RELEASE_SETUP.md), [Master Specification](docs/VESTIGIVO_RCA_PROMPT_MAESTRO_ENTERPRISE_AAAAA.md) and [Technical Checklist](docs/ENTERPRISE_AAAAA_CHECKLIST.md).
 
 ### Language
 
