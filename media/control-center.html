@@ -307,7 +307,7 @@ window.addEventListener('message',event=>{
   if(event.data&&event.data.type==='state'){model=event.data;render();return}
   // Never accepts navigation when not running the development-only screenshot harness.
   if(event.data&&event.data.type==='visualQaNavigate'&&model&&model.visualQa===true&&
-      ['overview','timeline','traces','cases'].includes(event.data.section)){
+      ['overview','timeline','traces','cases','evidence','report'].includes(event.data.section)){
     tab=event.data.section;render();
   }
 });
