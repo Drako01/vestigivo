@@ -73,7 +73,9 @@ export class ProviderClient {
     let decoded: unknown;
     try { decoded = JSON.parse(stored) as unknown; } catch { throw new Error('Corrupted provider credential; disconnect and reconnect.'); }
     const value = obj(decoded), config = obj(value?.config);
-    if (typeof value?.token !== 'string' || !config || typeof config.endpoint !== 'string')
+    if (typeof value?.token !== 'string' || value.token.trim().length < 8 ||
+        value.token.length > 4096 || /[\r\n]/.test(value.token) ||
+        !config || typeof config.endpoint !== 'string')
       throw new Error('Invalid provider credential record.');
     const raw: ProviderConnection = { endpoint: config.endpoint,
       ...(typeof config.organization === 'string' ? { organization: config.organization } : {}),
